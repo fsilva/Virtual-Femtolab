@@ -17,10 +17,11 @@ class pulseBeam:
         self.Spectrum              = zeros((self.NT),dtype=complex)
         self.BeamProfile_spot      = 0
         self.BeamProfile_curvature = 0
-        self.AutoCo                =  zeros((self.NT))
+        self.InterferometricAutoCo =  zeros((self.NT))
+        self.InterferometricAutoCoEnvelope =  zeros((self.NT))
         self.AutoCoFFT             =  zeros((self.NT/2))
         self.IntensiometricAutoCo  =  zeros((self.NT))
-        self.FROG                  = zeros((self.NT/2,self.NT))
+        self.FROG                  = zeros((self.NT,self.NT))
         #fill the frequencies and wavelengths arrays and t
         #self.frequencies           = arange(0,self.NT/self.deltaT/2,1/self.deltaT)
         #self.frequencies             = zeros((self.NT/2))
@@ -40,8 +41,9 @@ class pulseBeam:
         self.Spectrum[:]          = pulseBeam.Spectrum[:]
         self.BeamProfile_spot       = pulseBeam.BeamProfile_spot
         self.BeamProfile_curvature  = pulseBeam.BeamProfile_curvature
-        self.AutoCo[:]              = pulseBeam.AutoCo[:]
-        self.AutoCoFFT[:]           = pulseBeam.AutoCoFFT[:]
+        self.InterferometricAutoCoEnvelope[:]   = pulseBeam.InterferometricAutoCoEnvelope[:]
+        self.InterferometricAutoCo[:]   = pulseBeam.InterferometricAutoCo[:]
+#        self.AutoCoFFT[:]           = pulseBeam.AutoCoFFT[:]
         self.IntensiometricAutoCo[:]= pulseBeam.IntensiometricAutoCo[:]
         self.FROG[:,:]              = pulseBeam.FROG[:,:]
         
@@ -215,27 +217,49 @@ class pulseBeam:
         self.BeamProfile_curvature = R
         self.BeamProfile_spot = w
         
-        
-    def calculate_autoco(self):
-    #autoco calculation from Joao Silva
-        print 'autoco calculation wrong.'
-        E = self.ElectricField[:]
+    def calculate_autoco_helper(self,E):
+        #interferometric autoco Calculation by Joao Silva
         I = abs(E)**2
         
-        self.AutoCo[:] = 2.0*sum(I**2)
+        AutoCo = 2.0*sum(I**2)
 
         #Re[[4I(t)E(t)]E*(t-tau)]
-        self.AutoCo += 4.0*real(correlate(I*E,E.conj(),"full"))[self.NT/2:self.NT*3/2]
+        AutoCo += 4.0*real(correlate(I*E,E.conj(),"full"))[self.NT/2:self.NT*3/2]
 
         #4Re[[E(t)][I(t-tau)E*(t-tau)]]
-        self.AutoCo += 4.0*real(correlate(E,I*E.conj(),"full"))[self.NT/2:self.NT*3/2]
+        AutoCo += 4.0*real(correlate(E,I*E.conj(),"full"))[self.NT/2:self.NT*3/2]
 
         #2Re[E^2(t)E*^2(t-tau)]
-        self.AutoCo += 2.0*real(correlate(E**2,E.conj()**2,"full"))[self.NT/2:self.NT*3/2]
+        AutoCo += 2.0*real(correlate(E**2,E.conj()**2,"full"))[self.NT/2:self.NT*3/2]
+
+        #4I(t)I(t-tau)
+        AutoCo += 4.0*correlate(I,I,"full")[self.NT/2:self.NT*3/2]
+        
+        return AutoCo
+        
+        
+    def calculate_autoco(self):
+    #calculates 4 things:
+    #   -interferometric autoco (if sampling rate is sufficient)
+    #   -intensiometric autoco
+    #   -interferometric autoco envelope
+    #   -interferometric autoco FFT (if sampling rate is sufficient) #TODO
+    
+    #interferometric autoco calculation from Joao Silva
+        E = self.get_real_electric_field()
+        I = abs(self.ElectricField)**2
+        
+        if(not E is None):
+            self.InterferometricAutoCo[:] = self.calculate_autoco_helper(E)
+        else:
+            self.InterferometricAutoCo[:] = zeros((self.NT))
 
         #4I(t)I(t-tau)
         self.IntensiometricAutoCo[:] = 4.0*correlate(I,I,"full")[self.NT/2:self.NT*3/2]
-        self.AutoCo += self.IntensiometricAutoCo
+        
+        self.InterferometricAutoCoEnvelope[:] = self.calculate_autoco_helper(self.ElectricField)
+        
+        print 'Interferometric envelope TODO'
         
     
 #negative delay
@@ -256,44 +280,51 @@ class pulseBeam:
         #    self.IntensiometricAutoCo[self.NT/2+i] = total
             
      
-        self.AutoCo -= min(abs(self.AutoCo))
-        self.AutoCo /= max(abs(self.AutoCo))
-        self.AutoCo *= 8
+        self.InterferometricAutoCo -= min(abs(self.InterferometricAutoCo))
+        self.InterferometricAutoCo /= max(abs(self.InterferometricAutoCo))
+        self.InterferometricAutoCo *= 8
+        self.InterferometricAutoCoEnvelope -= min(abs(self.InterferometricAutoCoEnvelope))
+        self.InterferometricAutoCoEnvelope /= max(abs(self.InterferometricAutoCoEnvelope))
+        self.InterferometricAutoCoEnvelope *= 7
+        self.InterferometricAutoCoEnvelope += 1
         self.IntensiometricAutoCo -= min(abs(self.IntensiometricAutoCo))
         self.IntensiometricAutoCo /= max(abs(self.IntensiometricAutoCo))
         self.IntensiometricAutoCo *= 2
         self.IntensiometricAutoCo += 1
+        
+        
 
-        self.AutoCoFFT[:] = fft(self.AutoCo)[:self.NT/2]
-        self.AutoCoFFT /= max(self.AutoCoFFT)
+        #self.AutoCoFFT[:] = fft(self.AutoCo)[:self.NT/2]
+        #self.AutoCoFFT /= max(self.AutoCoFFT)
         
 
 
 
     def calculate_FROG(self):
-        print 'SHGFROG calc wrong'
+        
         self.FROGxmin   = self.t[0]
         self.FROGxmax   = self.t[-1]
         self.FROGdeltax = (self.t[-1]-self.t[0])/self.NT
         self.FROGymin   = self.frequencies[0]
         self.FROGymax   = self.frequencies[-1]
         self.FROGdeltay = (self.frequencies[-1]-self.frequencies[0])/self.NT
-
+        
+        ElectricField = real(self.ElectricField)
+        # complex field
+        
 #negative delay
         for i in xrange(self.NT/2):
             self.field     =  zeros((self.NT))
-            self.field[i:] = (self.ElectricField[:self.NT-i]*self.ElectricField[i:])**2
+            self.field[i:] = (ElectricField[:self.NT-i]*ElectricField[i:])**2
             self.field_fft = fft(self.field)       
-            self.field_fft[:self.NT/2] = zeros((self.NT/2))   #no negative freq
-            self.FROG[:,self.NT/2-i] = abs(self.field_fft[self.NT/2:])**2#fftshift(abs(self.field_fft[self.NT/2:])**2)
+            self.FROG[:,self.NT/2-i] = fftshift(abs(self.field_fft)**2)
             
 #positive delay
         for i in xrange(self.NT/2):
             self.field     = zeros((self.NT))
-            self.field[i:] = (self.ElectricField[i:]*self.ElectricField[:self.NT-i])**2
+            self.field[i:] = (ElectricField[i:]*ElectricField[:self.NT-i])**2
             self.field_fft = fft(self.field)  
-            self.field_fft[:self.NT/2] = zeros((self.NT/2))      #no negative freq
-            self.FROG[:,self.NT/2+i] = abs(self.field_fft[self.NT/2:])**2#fftshift(abs(self.field_fft[self.NT/2:])**2)
+            self.FROG[:,self.NT/2+i] = fftshift(abs(self.field_fft)**2)
             
         self.FROG /= ma.max(abs(self.FROG))
         
@@ -347,12 +378,18 @@ class pulseBeam:
     def get_frequencies(self):
         return roll(self.frequencies,self.NT/2)
     
-    def get_temporal_intensity(self):
-        return abs(self.ElectricField)**2
+    def get_temporal_envelope(self): #rename?
+        return abs(self.ElectricField)
         
     def get_temporal_phase(self):
-        phase = unwrap(angle(self.ElectricField)) #TODO: should we multiply by 2, because of intensity? (**2)
+        phase = unwrap(angle(self.ElectricField)) 
         return phase - phase[self.NT/2]
+    
+    def get_real_electric_field(self):
+        if(self.deltaT/self.NT > 1./self.freqZero/4.):
+            return None #no point calculating the real electric field. it would be undersampled.
+        else:
+            return real(self.ElectricField*exp(1j*(2*pi*self.freqZero*self.t+self.get_temporal_phase())))
     
     def get_spectral_intensity(self):
         return abs(roll(self.Spectrum,self.NT/2))**2
@@ -361,13 +398,19 @@ class pulseBeam:
         phase = unwrap(angle(roll(self.Spectrum,self.NT/2))) #TODO: should we multiply by 2, because of intensity? (**2)
         return phase - phase[self.NT/2]
         
-    def get_autoco(self):
-        return self.AutoCo
+    def get_interferometric_autoco(self):
+        return self.InterferometricAutoCo
+
+    def get_interferometric_autoco_envelope(self):
+        return self.InterferometricAutoCoEnvelope
+
+    def get_intensiometric_autoco(self):
+        return self.IntensiometricAutoCo
         
     def get_SHGFROG(self):
         return self.FROG
         
-    def phase_blank(self,t,data_array,phase_array,threshold):
+    def phase_blank(self,t,data_array,phase_array,threshold): #TODO: speed this up, perhaps
         absarray = abs(data_array)
         absarray /= max(absarray) 
         i = 0

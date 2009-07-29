@@ -38,7 +38,7 @@ class FourPlots(wx.Panel):
         
         self.plot3 = self.figure.add_subplot(222)
         self.axes3 = self.figure.gca()
-        self.axes3.set_title('Autocorrelation')#,fontsize=12)
+        self.axes3.set_title('Autocorrelations')#,fontsize=12)
         
         self.plot4 = self.figure.add_subplot(224)
         self.axes4 = self.figure.gca()
@@ -46,12 +46,20 @@ class FourPlots(wx.Panel):
 
         self.plot_init = False
 
-    def redraw(self, t_intensity, intensity, t_phase, temporal_phase, freq, spectrum, freq_phase, spectral_phase, autoco, autoco_fft, frog):
+    def redraw(self, t_envelope, envelope, electric_field, t_phase, temporal_phase, freq, spectrum, freq_phase, spectral_phase, inter_autoco,inter_autoco_env,inten_autoco, autoco_fft, frog):
         if(self.plot_init == False):
             #temporal profile
-            self.plot1_line1, = self.plot1.plot(t_intensity, intensity, 'r')
+            self.plot1_line1, = self.plot1.plot(t_envelope, envelope, 'r')
+            if(not electric_field is None):
+                self.plot1_line2, = self.plot1.plot(t_envelope, electric_field, 'b')
             self.plot1_twinx = self.plot1.twinx()
-            self.plot1_line2, = self.plot1_twinx.plot(t_phase, temporal_phase, 'k')
+            self.plot1_line3, = self.plot1_twinx.plot(t_phase, temporal_phase, 'k')
+            
+            max_phase = max(temporal_phase)
+            min_phase = min(temporal_phase)
+            delta = max_phase-min_phase
+            if(delta < 0.1):
+                self.plot1_twinx.set_ylim((-0.09,0.01))
             
             #spectral profile
             self.plot2_line1, = self.plot2.plot(freq, spectrum, 'g')
@@ -59,7 +67,9 @@ class FourPlots(wx.Panel):
             self.plot2_line2, = self.plot2_twinx.plot(freq_phase, spectral_phase, 'k')
             
             #autoco
-            self.plot3_line1, = self.plot3.plot(t_intensity, autoco, 'b')
+            self.plot3_line1, = self.plot3.plot(t_envelope, inter_autoco, 'b')
+            self.plot3_line2, = self.plot3.plot(t_envelope, inter_autoco_env, 'g')
+            self.plot3_line3, = self.plot3.plot(t_envelope, inten_autoco, 'r')            
 #            self.plot3_twinx = self.plot2.twinx()  #TODO: add autocoFFT
 #            self.plot3_line2, = self.plot2_twinx.plot(autoco_fft, 'k')
 
@@ -73,15 +83,32 @@ class FourPlots(wx.Panel):
             self.plot_init = True
         else:
             #temporal profile
-            self.plot1_line1.set_ydata(intensity)
-            self.plot1_line2.set_data(t_phase,temporal_phase)
-            self.plot1_twinx.set_ylim((min(temporal_phase),max(temporal_phase))) 
+            self.plot1_line1.set_ydata(envelope)
+            if(not electric_field is None):
+                self.plot1_line2.set_ydata(electric_field)
+                
+            self.plot1_line3.set_data(t_phase,temporal_phase)
+            max_phase = max(temporal_phase)
+            min_phase = min(temporal_phase)
+            delta = max_phase-min_phase
+            if(delta < 0.1):
+                self.plot1_twinx.set_ylim((-0.09,0.01))
+            else:
+                self.plot1_twinx.set_ylim((min_phase-delta/10.,max_phase+delta/10.))
+            
             #spectral profile
             self.plot2_line1.set_ydata(spectrum)
             self.plot2_line2.set_data(freq_phase,spectral_phase)
-            self.plot2_twinx.set_ylim((min(spectral_phase),max(spectral_phase))) 
+            
+            max_phase = max(spectral_phase)
+            min_phase = min(spectral_phase)
+            delta = max_phase-min_phase
+            self.plot2_twinx.set_ylim((min_phase-delta/10.,max_phase+delta/10.))
+            
             #Autoco
-            self.plot3_line1.set_ydata(autoco)
+            self.plot3_line1.set_ydata(inter_autoco)
+            self.plot3_line2.set_ydata(inter_autoco_env)
+            self.plot3_line3.set_ydata(inten_autoco)
             #TODO: add autocofft
             #SHG FROG
             self.plot4_imshow.set_data(frog)
@@ -134,6 +161,7 @@ class VFFrame(wx.Frame):
         self.__set_properties()
 
         #Set Parameter Values in Grid
+        self.init_grid_information()
         self.refresh_grid_information()
 
         self.__do_layout()
@@ -232,7 +260,7 @@ class VFFrame(wx.Frame):
         event.Skip()
         
     def init_calculations(self):
-        self.propagator = propagator.Propagator(128,128.e-15,8.e-7)
+        self.propagator = propagator.Propagator(256,64.e-15,8.e-7)
         self.propagator.example_pulseBeam()
         self.propagator.example_elements()
         
@@ -249,11 +277,12 @@ class VFFrame(wx.Frame):
         pulseBeam = self.propagator.get_pulseBeam()
         
         t = pulseBeam.get_t()
-        intensity = pulseBeam.get_temporal_intensity()
+        envelope = pulseBeam.get_temporal_envelope()
+        electric_field = pulseBeam.get_real_electric_field()
         
         t_phase = t[:]
         temporal_phase = pulseBeam.get_temporal_phase()
-        t_phase,temporal_phase = pulseBeam.phase_blank(t_phase,intensity,temporal_phase,1e-3)
+        t_phase,temporal_phase = pulseBeam.phase_blank(t_phase,envelope,temporal_phase,1e-2)
 
         
         freq = pulseBeam.get_frequencies()
@@ -261,11 +290,16 @@ class VFFrame(wx.Frame):
         
         freq_phase = freq[:]
         spectral_phase = pulseBeam.get_spectral_phase()
-        freq_phase,spectral_phase = pulseBeam.phase_blank(freq_phase,spectrum,spectral_phase,1e-10)
+        freq_phase,spectral_phase = pulseBeam.phase_blank(freq_phase,spectrum,spectral_phase,1e-3)
         
-        autoco = pulseBeam.get_autoco()
+        inter_autoco     = pulseBeam.get_interferometric_autoco()
+        inter_autoco_env = pulseBeam.get_interferometric_autoco_envelope()        
+        inten_autoco     = pulseBeam.get_intensiometric_autoco()
         frog = pulseBeam.get_SHGFROG()
-        self.plot.redraw(t,intensity,t_phase,temporal_phase,freq,spectrum,freq_phase,spectral_phase,autoco,0,frog)
+        self.plot.redraw(t,envelope,electric_field,t_phase,temporal_phase,freq,spectrum,freq_phase,spectral_phase,inter_autoco,inter_autoco_env,inten_autoco,0,frog)
+        
+    def init_grid_information(self):
+        pass
         
     def refresh_grid_information(self):
         pass
