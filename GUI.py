@@ -12,6 +12,7 @@ from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
 from matplotlib.backends.backend_wxagg import NavigationToolbar2Wx as Toolbar
 
 import propagator
+import draw_schematic
 
 class FourPlots(wx.Panel):
     def __init__(self, parent, id = -1, dpi = None, **kwargs):
@@ -275,7 +276,8 @@ class VFFrame(wx.Frame):
         # Refresh interface/redraw
         self.refresh_interface()
         self.refresh_grid_information()
-        #how to force a schematic redraw: self.Layout()
+        #how to force a schematic redraw: 
+        self.Layout()
     
     def refresh_interface(self):
         pulseBeam = self.propagator.get_pulseBeam()
@@ -371,9 +373,24 @@ class VFFrame(wx.Frame):
         
     def repaint_schematic(self,event):
         dc = wx.PaintDC(self.SchematicPanel)
-        dc.SetPen(wx.Pen('blue', 4))
-        dc.DrawLine(50, 20, 300, 20)
-        #print 'paint',event
+        
+        box = self.SchematicPanel.GetSizeTuple()
+        width = 100
+        height = box[1]
+        
+        x = 0
+        
+        text = '6.6 fs' #TODO: fix
+        draw_schematic.draw_initial_pulse(dc,x,width,height,text) #TODO: missing beam spot things
+        x += width
+        
+        elements = self.propagator.get_elements()
+        
+        for element in elements:
+            draw_schematic.draw_element(dc,x,width,height,element,str(element.__class__))
+            x += width
+            
+        #print 'paint',event,self.SchematicPanel.GetUpdateRegion().GetBox()
         event.Skip()
         
 

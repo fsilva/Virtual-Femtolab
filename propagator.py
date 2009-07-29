@@ -36,6 +36,9 @@ class Propagator:
         #self.elements.append(element_chirpedmirror.Element_ChirpedMirror(element_chirpedmirror.mirrors[0],10,800e-9))
         #self.elements.append(element_propagation.Element_Propagation(0.005,element_propagation.materials[0],800e-9))
         
+    def get_elements(self):
+        return self.elements
+        
         
     def get_max_z(self):
         z0 = 0
