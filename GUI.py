@@ -162,7 +162,6 @@ class VFFrame(wx.Frame):
 
         #Set Parameter Values in Grid
         self.init_grid_information()
-        self.refresh_grid_information()
 
         self.__do_layout()
 
@@ -176,16 +175,19 @@ class VFFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.editbutton_click, self.EditButton)
         self.Bind(wx.EVT_BUTTON, self.removebutton_click, self.RemoveButton)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.distanceslider_change, self.DistanceSlider)
+        
+        self.SchematicPanel.Bind(wx.EVT_PAINT, self.repaint_schematic) 
         # end wxGlade
         
         self.init_calculations()
         self.refresh_interface()
+        self.refresh_grid_information()
 
     def __set_properties(self):
         # begin wxGlade: VFFrame.__set_properties
         self.SetTitle("Virtual Femtolab")
         self.SetSize((900,675))
-        self.VFData.CreateGrid(10, 3)
+        self.VFData.CreateGrid(12, 3)
         self.VFData.SetRowLabelSize(0)
         self.VFData.SetColLabelSize(0)
         self.VFData.EnableEditing(0)
@@ -260,7 +262,7 @@ class VFFrame(wx.Frame):
         event.Skip()
         
     def init_calculations(self):
-        self.propagator = propagator.Propagator(256,64.e-15,8.e-7)
+        self.propagator = propagator.Propagator(256,256.e-15,8.e-7)
         self.propagator.example_pulseBeam()
         self.propagator.example_elements()
         
@@ -272,6 +274,8 @@ class VFFrame(wx.Frame):
     
         # Refresh interface/redraw
         self.refresh_interface()
+        self.refresh_grid_information()
+        #how to force a schematic redraw: self.Layout()
     
     def refresh_interface(self):
         pulseBeam = self.propagator.get_pulseBeam()
@@ -290,7 +294,7 @@ class VFFrame(wx.Frame):
         
         freq_phase = freq[:]
         spectral_phase = pulseBeam.get_spectral_phase()
-        freq_phase,spectral_phase = pulseBeam.phase_blank(freq_phase,spectrum,spectral_phase,1e-3)
+        freq_phase,spectral_phase = pulseBeam.phase_blank(freq_phase,spectrum,spectral_phase,1e-2)
         
         inter_autoco     = pulseBeam.get_interferometric_autoco()
         inter_autoco_env = pulseBeam.get_interferometric_autoco_envelope()        
@@ -299,14 +303,77 @@ class VFFrame(wx.Frame):
         self.plot.redraw(t,envelope,electric_field,t_phase,temporal_phase,freq,spectrum,freq_phase,spectral_phase,inter_autoco,inter_autoco_env,inten_autoco,0,frog)
         
     def init_grid_information(self):
-        pass
+        self.VFData.SetDefaultCellFont(wx.Font(12, wx.FONTFAMILY_SWISS, wx.NORMAL, wx.FONTWEIGHT_NORMAL))
+        self.VFData.SetCellValue(0,0,'Num.Points')
+        self.VFData.SetCellValue(1,0,'Delta T')
+        self.VFData.SetCellValue(1,2,'fs')
+        self.VFData.SetCellValue(2,0,'FWHM (iterative)')
+        self.VFData.SetCellValue(2,2,'fs')
+        self.VFData.SetCellValue(3,0,'FWHM (gaussian fit)')
+        self.VFData.SetCellValue(3,2,'fs')        
+        self.VFData.SetCellValue(4,0,'Spectral FWHM')
+        self.VFData.SetCellValue(4,2,'nm')
+        self.VFData.SetCellValue(5,0,'Beam Spot')
+        self.VFData.SetCellValue(5,2,'mm')
+        self.VFData.SetCellValue(6,0,'Beam Curvature')
+        self.VFData.SetCellValue(6,2,'m')
+        self.VFData.SetCellValue(7,0,'Peak Power')
+        self.VFData.SetCellValue(7,2,'W')
+        self.VFData.SetCellValue(8,0,'Peak Intensity')
+        self.VFData.SetCellValue(8,2,'Wm^-2')
+        self.VFData.SetCellValue(9,0,'Pulse Energy')
+        self.VFData.SetCellValue(9,2,'J')
+        self.VFData.SetCellValue(10,0,'Rep. Rate')
+        self.VFData.SetCellValue(10,2,'MHz')
+        self.VFData.SetCellValue(11,0,'CW Power')
+        self.VFData.SetCellValue(11,2,'W')
+        #L = ? TODO
+        
+        
+        
+        
         
     def refresh_grid_information(self):
-        pass
+        pulseBeam = self.propagator.get_pulseBeam()
+        self.VFData.SetCellValue(0,1,'%d'%pulseBeam.NT)
+        self.VFData.SetCellValue(1,1,'%3.1f'%(pulseBeam.deltaT*1e15))
+        fwhm1,fwhm2 = pulseBeam.calculate_fwhm()
+        self.VFData.SetCellValue(2,1,'%3.3f'%(fwhm1*1e15))
+        self.VFData.SetCellValue(3,1,'%3.3f'%(fwhm2*1e15))
+        self.VFData.SetCellValue(4,1,'%3.3f'%(pulseBeam.get_spectral_fwhm()*1e9))
+        spot = pulseBeam.get_beam_spot()
+        if(spot < 1e-3):
+            self.VFData.SetCellValue(5,1,'%3.3e'%(spot*1e6))
+            self.VFData.SetCellValue(5,2,'um')
+        else:
+            self.VFData.SetCellValue(5,1,'%3.3e'%(spot*1e3))
+            self.VFData.SetCellValue(5,2,'mm')
+        self.VFData.SetCellValue(6,1,'%3.3e'%(pulseBeam.get_beam_curvature()))
+        self.VFData.SetCellValue(7,1,'%3.3e'%(pulseBeam.calc_peak_power()))
+        self.VFData.SetCellValue(8,1,'%3.3e'%(pulseBeam.calc_peak_intensity()))
+        self.VFData.SetCellValue(9,1,'%3.3e'%(pulseBeam.calc_energy()))
+        rep_rate = pulseBeam.get_rep_rate()
+        if(rep_rate < 1e6):
+            self.VFData.SetCellValue(10,1,'%3.3e'%(rep_rate*1e-3))
+            self.VFData.SetCellValue(10,2,'KHz')
+        else:
+            self.VFData.SetCellValue(10,1,'%3.3e'%(rep_rate*1e-6))
+            self.VFData.SetCellValue(10,2,'MHz')
+        self.VFData.SetCellValue(11,1,'%3.3e'%(pulseBeam.calc_CW_power()))
+
+        self.VFData.Fit()
         
     def resize(self,event):
         print 'resize not implemented'
         #TODO: resize properties table
+        print event.GetSize()
+        event.Skip()
+        
+    def repaint_schematic(self,event):
+        dc = wx.PaintDC(self.SchematicPanel)
+        dc.SetPen(wx.Pen('blue', 4))
+        dc.DrawLine(50, 20, 300, 20)
+        #print 'paint',event
         event.Skip()
         
 

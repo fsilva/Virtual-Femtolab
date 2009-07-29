@@ -329,7 +329,7 @@ class pulseBeam:
         self.FROG /= ma.max(abs(self.FROG))
         
         
-    def calc_fwhm(self): # return two approximations to FWHM
+    def calculate_fwhm(self): # return two approximations to FWHM
     
         #calculate intensity envelope
         envelope = abs(self.ElectricField[:])**2
@@ -340,6 +340,7 @@ class pulseBeam:
         width = sqrt(abs(sum((X-x)**2*envelope)/sum(envelope)))
         fwhm1 = 2.35*width*self.deltaT/self.NT
         
+        #TODO: speed this up and refactor, same code in next function
         #calculate FWHM by finding the half maximum level intersections
         max_envelope = max(envelope)
         i = 0
@@ -360,6 +361,35 @@ class pulseBeam:
         
         return fwhm1,fwhm2
         
+    def get_spectral_fwhm(self): #TODO: speed this up and refactor with previous function
+        #calculate FWHM by finding the half maximum level intersections
+        envelope = self.get_spectral_intensity()
+        max_envelope = max(envelope)
+        
+        i = 0.
+        #find first intersection
+        while(envelope[i] < max_envelope/2. and i < len(envelope)):
+           i+=1
+        #interpolate
+        i_ = i+(max_envelope/2.-envelope[i-1])/(envelope[i]-envelope[i-1])
+           
+        #find second intersection
+        j = len(envelope)-1.
+        while(envelope[j] < max_envelope/2. and j > 0):
+           j -= 1.
+        #interpolate
+        j_ = j-(max_envelope/2.-envelope[j])/(envelope[j-1]-envelope[j])
+        
+        #fwhm = (j_-i_)/self.deltaT
+        fwhm = (j-i)/self.deltaT #TODO: fix
+        
+        #print i,j,j_-i_,fwhm
+        
+        fwhm = 3e8/self.freqZero**2*fwhm
+        
+        return fwhm
+        
+        
     def calc_energy(self):
         return sum(abs(self.ElectricField[:]**2))*self.deltaT/self.NT
         
@@ -371,6 +401,15 @@ class pulseBeam:
         
     def calc_CW_power(self):
         return self.calc_energy()*self.rate
+        
+    def get_beam_spot(self):
+        return self.BeamProfile_spot
+    
+    def get_beam_curvature(self):
+        return self.BeamProfile_curvature
+        
+    def get_rep_rate(self):
+        return self.rate
         
     def get_t(self):
         return self.t

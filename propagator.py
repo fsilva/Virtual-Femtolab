@@ -19,7 +19,7 @@ class Propagator:
         return self.pulseBeam
         
     def example_pulseBeam(self):
-        self.initialPulseBeam.initialize_pulse(6.6e-15,0,0,0,0,2e-3,1e10,0,1e-3,1000)
+        self.initialPulseBeam.initialize_pulse(60.6e-15,0,0,0,0,1e-6,1e10,0,1e-3,1000)
         
         self.initialPulseBeam.calculate_autoco()
         self.initialPulseBeam.calculate_FROG()
