@@ -271,7 +271,7 @@ class pulseBeam:
 
 
     def calculate_FROG(self):
-        
+        print 'SHGFROG calc wrong'
         self.FROGxmin   = self.t[0]
         self.FROGxmax   = self.t[-1]
         self.FROGdeltax = (self.t[-1]-self.t[0])/self.NT
@@ -345,22 +345,44 @@ class pulseBeam:
         return self.t
     
     def get_frequencies(self):
-        return self.frequencies
+        return roll(self.frequencies,self.NT/2)
     
     def get_temporal_intensity(self):
         return abs(self.ElectricField)**2
         
     def get_temporal_phase(self):
-        return unwrap(angle(self.ElectricField)) #TODO: should we multiply by 2, because of intensity? (**2)
+        phase = unwrap(angle(self.ElectricField)) #TODO: should we multiply by 2, because of intensity? (**2)
+        return phase - phase[self.NT/2]
     
     def get_spectral_intensity(self):
-        return abs(self.Spectrum)**2
+        return abs(roll(self.Spectrum,self.NT/2))**2
 
     def get_spectral_phase(self):
-        return unwrap(angle(self.Spectrum)) #TODO: should we multiply by 2, because of intensity? (**2)
+        phase = unwrap(angle(roll(self.Spectrum,self.NT/2))) #TODO: should we multiply by 2, because of intensity? (**2)
+        return phase - phase[self.NT/2]
         
     def get_autoco(self):
         return self.AutoCo
         
     def get_SHGFROG(self):
         return self.FROG
+        
+    def phase_blank(self,t,data_array,phase_array,threshold):
+        absarray = abs(data_array)
+        absarray /= max(absarray) 
+        i = 0
+        while(i < self.NT and absarray[i] < threshold):
+            i += 1
+        
+        if(i == self.NT):
+            return #no information here
+        
+        j = self.NT-1
+        
+        while(j >= 0 and absarray[j] < threshold):
+            j -= 1
+        
+        if(j == -1):
+            return #no information here
+            
+        return t[i:j], phase_array[i:j]

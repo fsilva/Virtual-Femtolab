@@ -46,26 +46,26 @@ class FourPlots(wx.Panel):
 
         self.plot_init = False
 
-    def redraw(self, t, intensity, tphase, freq, spectrum, sphase, autoco, autoco_fft, frog):
+    def redraw(self, t_intensity, intensity, t_phase, temporal_phase, freq, spectrum, freq_phase, spectral_phase, autoco, autoco_fft, frog):
         if(self.plot_init == False):
             #temporal profile
-            self.plot1_line1, = self.plot1.plot(t, intensity, 'r')
+            self.plot1_line1, = self.plot1.plot(t_intensity, intensity, 'r')
             self.plot1_twinx = self.plot1.twinx()
-            self.plot1_line2, = self.plot1_twinx.plot(t, tphase, 'k')
+            self.plot1_line2, = self.plot1_twinx.plot(t_phase, temporal_phase, 'k')
             
             #spectral profile
             self.plot2_line1, = self.plot2.plot(freq, spectrum, 'g')
             self.plot2_twinx = self.plot2.twinx()
-            self.plot2_line2, = self.plot2_twinx.plot(freq, sphase, 'k')
+            self.plot2_line2, = self.plot2_twinx.plot(freq_phase, spectral_phase, 'k')
             
             #autoco
-            self.plot3_line1, = self.plot3.plot(t, autoco, 'b')
+            self.plot3_line1, = self.plot3.plot(t_intensity, autoco, 'b')
 #            self.plot3_twinx = self.plot2.twinx()  #TODO: add autocoFFT
 #            self.plot3_line2, = self.plot2_twinx.plot(autoco_fft, 'k')
 
             #SHG FROG
             extent = 0,1,0,1
-            self.plot4_imshow = self.plot4.imshow(frog, interpolation='bilinear',extent=extent,aspect="auto")
+            self.plot4_imshow = self.plot4.imshow(frog, interpolation='bilinear')#,extent=extent,aspect="auto")
             #TODO: change bilinear to better, but also fast, interpolation
             #extent = pulsebeam.FROGxmin+k*pulsebeam.FROGdeltax, pulsebeam.FROGxmin+l*pulsebeam.FROGdeltax, \
             #             pulsebeam.FROGymin+i*pulsebeam.FROGdeltay, pulsebeam.FROGymin+j*pulsebeam.FROGdeltay
@@ -74,10 +74,12 @@ class FourPlots(wx.Panel):
         else:
             #temporal profile
             self.plot1_line1.set_ydata(intensity)
-            self.plot1_line2.set_ydata(tphase)
+            self.plot1_line2.set_data(t_phase,temporal_phase)
+            self.plot1_twinx.set_ylim((min(temporal_phase),max(temporal_phase))) 
             #spectral profile
             self.plot2_line1.set_ydata(spectrum)
-            self.plot2_line2.set_ydata(sphase)
+            self.plot2_line2.set_data(freq_phase,spectral_phase)
+            self.plot2_twinx.set_ylim((min(spectral_phase),max(spectral_phase))) 
             #Autoco
             self.plot3_line1.set_ydata(autoco)
             #TODO: add autocofft
@@ -223,13 +225,18 @@ class VFFrame(wx.Frame):
 
     def distanceslider_change(self, event): # wxGlade: VFFrame.<event_handler>
         distance = self.DistanceSlider.GetValue()/1000.*self.propagator.get_max_z()
-        self.change_distance(distance)
+        if(abs(self.distance-distance) > 1e-15):
+            self.distance = distance
+            self.change_distance(distance)
 
         event.Skip()
         
     def init_calculations(self):
-        self.propagator = propagator.Propagator(128,64.e-15,8.e-7)
+        self.propagator = propagator.Propagator(128,128.e-15,8.e-7)
         self.propagator.example_pulseBeam()
+        self.propagator.example_elements()
+        
+        self.distance = 0
 
     def change_distance(self, distance):
         # Recalculate everything
@@ -240,15 +247,25 @@ class VFFrame(wx.Frame):
     
     def refresh_interface(self):
         pulseBeam = self.propagator.get_pulseBeam()
+        
         t = pulseBeam.get_t()
         intensity = pulseBeam.get_temporal_intensity()
-        tphase = pulseBeam.get_temporal_phase()
+        
+        t_phase = t[:]
+        temporal_phase = pulseBeam.get_temporal_phase()
+        t_phase,temporal_phase = pulseBeam.phase_blank(t_phase,intensity,temporal_phase,1e-3)
+
+        
         freq = pulseBeam.get_frequencies()
         spectrum = pulseBeam.get_spectral_intensity()
-        sphase = pulseBeam.get_spectral_phase()
+        
+        freq_phase = freq[:]
+        spectral_phase = pulseBeam.get_spectral_phase()
+        freq_phase,spectral_phase = pulseBeam.phase_blank(freq_phase,spectrum,spectral_phase,1e-10)
+        
         autoco = pulseBeam.get_autoco()
         frog = pulseBeam.get_SHGFROG()
-        self.plot.redraw(t,intensity,tphase,freq,spectrum,sphase,autoco,0,frog)
+        self.plot.redraw(t,intensity,t_phase,temporal_phase,freq,spectrum,freq_phase,spectral_phase,autoco,0,frog)
         
     def refresh_grid_information(self):
         pass

@@ -3,10 +3,10 @@ import pulseBeam
 #import initialpulse_dialog
 #import addelement_dialog
 
-#import element_propagation
-#import element_thinlens
-#import element_chirpedmirror
-#import element_filter
+import element_propagation
+import element_thinlens
+import element_chirpedmirror
+import element_filter
 
 class Propagator:
     def __init__(self,NT,deltaT,lambdaZero):
@@ -31,7 +31,7 @@ class Propagator:
     
     def example_elements(self):
         #self.elements.append(element_thinlens.Element_ThinLens(1,800e-9))
-        self.elements.append(element_propagation.Element_Propagation(0.025,element_propagation.materials[1],800e-9))
+        self.elements.append(element_propagation.Element_Propagation(0.001,element_propagation.materials[1],800e-9))
         #self.elements.append(element_propagation.Element_Propagation(0.005,element_propagation.materials[0],800e-9))
         #self.elements.append(element_chirpedmirror.Element_ChirpedMirror(element_chirpedmirror.mirrors[0],10,800e-9))
         #self.elements.append(element_propagation.Element_Propagation(0.005,element_propagation.materials[0],800e-9))
