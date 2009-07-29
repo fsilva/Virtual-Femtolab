@@ -19,7 +19,7 @@ class Propagator:
         return self.pulseBeam
         
     def example_pulseBeam(self):
-        self.initialPulseBeam.initialize_pulse(60.6e-15,0,0,0,0,1e-6,1e10,0,1e-3,1000)
+        self.initialPulseBeam.initialize_pulse(4e-15,0,0,0,0,1e-6,1e10,0,1e-3,1000)
         
         self.initialPulseBeam.calculate_autoco()
         self.initialPulseBeam.calculate_FROG()
@@ -30,7 +30,7 @@ class Propagator:
 
     
     def example_elements(self):
-        #self.elements.append(element_thinlens.Element_ThinLens(1,800e-9))
+        self.elements.append(element_thinlens.Element_ThinLens(1,800e-9))
         self.elements.append(element_propagation.Element_Propagation(0.001,element_propagation.materials[1],800e-9))
         #self.elements.append(element_propagation.Element_Propagation(0.005,element_propagation.materials[0],800e-9))
         #self.elements.append(element_chirpedmirror.Element_ChirpedMirror(element_chirpedmirror.mirrors[0],10,800e-9))
@@ -79,6 +79,21 @@ class Propagator:
     
         self.pulseBeam.calculate_autoco()
         self.pulseBeam.calculate_FROG()   
+        
+    def get_spots(self):
+        spots = []
+        
+        initialSpot = self.initialPulseBeam.BeamProfile_spot
+        initialRadius = self.initialPulseBeam.BeamProfile_curvature
+        #TODO TODO TODO
+        for element in self.elements:
+            spots.append(self.initialPulseBeam.BeamProfile_spot)
+            spots.append(-0.15)
+            
+        self.initialPulseBeam.BeamProfile_spot = initialSpot
+        self.initialPulseBeam.BeamProfile_curvature  = initialRadius
+            
+        return spots
         
         
     def open_edit_dialog(self,selected,refresh_callback):

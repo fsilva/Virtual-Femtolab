@@ -10,6 +10,7 @@ import wx.grid
 import matplotlib as mpl
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
 from matplotlib.backends.backend_wxagg import NavigationToolbar2Wx as Toolbar
+from numpy import array
 
 import propagator
 import draw_schematic
@@ -263,7 +264,7 @@ class VFFrame(wx.Frame):
         event.Skip()
         
     def init_calculations(self):
-        self.propagator = propagator.Propagator(256,256.e-15,8.e-7)
+        self.propagator = propagator.Propagator(256,64.e-15,8.e-7)
         self.propagator.example_pulseBeam()
         self.propagator.example_elements()
         
@@ -375,20 +376,24 @@ class VFFrame(wx.Frame):
         dc = wx.PaintDC(self.SchematicPanel)
         
         box = self.SchematicPanel.GetSizeTuple()
-        width = 100
+        width = 120
         height = box[1]*0.5 #TODO: fix hack
         
         x = 5
         
         text = '6.6 fs' #TODO: fix
-        draw_schematic.draw_initial_pulse(dc,x,width,height,text) #TODO: missing beam spot things
-        x += width
+        draw_schematic.draw_initial_pulse(dc,x,width,height,text,True) 
+        x += width+5
         
         elements = self.propagator.get_elements()
+        spots = self.propagator.get_spots()
+        spots /= max(abs(array(spots)))
         
-        for element in elements:
-            draw_schematic.draw_element(dc,x,width,height,element,str(element.__class__))
-            x += width
+        for i in xrange(len(elements)):
+            spot_in  = spots[2*i+0]
+            spot_out = spots[2*i+1]
+            draw_schematic.draw_element(dc,x,width,height,elements[i],str(elements[i].__class__),False,spot_in,spot_out)
+            x += width+5
             
         #print 'paint',event,self.SchematicPanel.GetUpdateRegion().GetBox()
         event.Skip()
