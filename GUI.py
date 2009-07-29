@@ -376,9 +376,9 @@ class VFFrame(wx.Frame):
         
         box = self.SchematicPanel.GetSizeTuple()
         width = 100
-        height = box[1]
+        height = box[1]*0.5 #TODO: fix hack
         
-        x = 0
+        x = 5
         
         text = '6.6 fs' #TODO: fix
         draw_schematic.draw_initial_pulse(dc,x,width,height,text) #TODO: missing beam spot things
