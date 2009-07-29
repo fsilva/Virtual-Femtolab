@@ -11,6 +11,8 @@ import matplotlib as mpl
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
 from matplotlib.backends.backend_wxagg import NavigationToolbar2Wx as Toolbar
 
+import propagator
+
 class FourPlots(wx.Panel):
     def __init__(self, parent, id = -1, dpi = None, **kwargs):
         wx.Panel.__init__(self, parent, id=id, **kwargs)
@@ -145,11 +147,14 @@ class VFFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.removebutton_click, self.RemoveButton)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.distanceslider_change, self.DistanceSlider)
         # end wxGlade
+        
+        self.init_calculations()
+        self.refresh_interface()
 
     def __set_properties(self):
         # begin wxGlade: VFFrame.__set_properties
         self.SetTitle("Virtual Femtolab")
-        self.SetSize((800, 600))
+        self.SetSize((900,675))
         self.VFData.CreateGrid(10, 3)
         self.VFData.SetRowLabelSize(0)
         self.VFData.SetColLabelSize(0)
@@ -217,26 +222,32 @@ class VFFrame(wx.Frame):
         event.Skip()
 
     def distanceslider_change(self, event): # wxGlade: VFFrame.<event_handler>
-        distance = self.DistanceSlider.GetValue()/1000. # TODO add multiplication
+        distance = self.DistanceSlider.GetValue()/1000.*self.propagator.get_max_z()
         self.change_distance(distance)
 
         event.Skip()
+        
+    def init_calculations(self):
+        self.propagator = propagator.Propagator(128,64.e-15,8.e-7)
+        self.propagator.example_pulseBeam()
 
     def change_distance(self, distance):
         # Recalculate everything
+        self.propagator.change_z(distance)
     
         # Refresh interface/redraw
         self.refresh_interface()
     
     def refresh_interface(self):
-        t = [0,1,2,3,4]
-        intensity = [0,1,2,3,4]
-        tphase = [0,1,0,3,0]
-        freq = [0,1,2,3,4]
-        spectrum = [0,1,2,3,4]
-        sphase = [0,1,0,3,0]
-        autoco = [0,1,0,3,0]
-        frog = [[10,5],[5,0]]
+        pulseBeam = self.propagator.get_pulseBeam()
+        t = pulseBeam.get_t()
+        intensity = pulseBeam.get_temporal_intensity()
+        tphase = pulseBeam.get_temporal_phase()
+        freq = pulseBeam.get_frequencies()
+        spectrum = pulseBeam.get_spectral_intensity()
+        sphase = pulseBeam.get_spectral_phase()
+        autoco = pulseBeam.get_autoco()
+        frog = pulseBeam.get_SHGFROG()
         self.plot.redraw(t,intensity,tphase,freq,spectrum,sphase,autoco,0,frog)
         
     def refresh_grid_information(self):
