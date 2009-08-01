@@ -106,12 +106,7 @@ class Propagator:
     def initial_pulse_open_edit_dialog(self,refresh_callback):
         self.initialpulse_dialog = initialpulse_dialog.InitialPulse_Dialog(self.initialPulseBeam,refresh_callback,self.config)
         
-    def open_add_dialog(self,selected,refresh_callback):
-        self.refresh_callback = refresh_callback
-        self.selected = selected
-        self.addelement_dialog = addelement_dialog.AddElement_Dialog(self.add_element)
-        
-    def add_element(self,element_type):
+    def add_element(self,element_type,position):
         if(element_type == 'Material Propagation'):
            element = element_propagation.Element_Propagation(0.001,element_propagation.materials[0],800e-9)
         elif(element_type == 'Thin Lens'):
@@ -123,20 +118,16 @@ class Propagator:
         else:
             return
             
-        self.elements.insert(self.selected,element)
+        self.elements.insert(position,element)
         
-        element.open_edit_dialog(self.refresh_callback)
+#        element.open_edit_dialog(self.refresh_callback)
         
-        self.refresh_callback() 
+#        self.refresh_callback() 
         
-    def remove_element(self,selected,refresh_callback):
-        if(selected == 0):
-            print 'Cannot remove initial inpulse'
-            return
-        if(selected > len(self.elements)):
+    def remove_element(self,selected):
+        if(selected >= len(self.elements)):
             print 'remove_element: invalid selected data'
             return 
         
-        del self.elements[selected-1] 
+        del self.elements[selected] 
             
-        refresh_callback() 

@@ -252,16 +252,28 @@ class VFFrame(wx.Frame):
 
     def addbutton_click(self, event): # wxGlade: VFFrame.<event_handler>
         # Open add dialog
-        event.Skip()
+        import add_dialog
+        dialog = add_dialog.AddDialog(self)
+        dialog.set_info(self.selected, self.propagator.add_element,self.repaint_schematic)
+        dialog.Show()
 
     def editbutton_click(self, event): # wxGlade: VFFrame.<event_handler>
         print "Event handler `editbutton_click' not implemented!"
         event.Skip()
 
     def removebutton_click(self, event): # wxGlade: VFFrame.<event_handler>
-        dialog = wx.MessageDialog(None, 'Are you sure you want to remove %s ?'%'cena', 'Confirmation', 
+        if(self.selected == 0 or self.selected > len(self.propagator.get_elements())):
+            event.Skip()
+            return
+            
+        element = self.propagator.get_elements()[self.selected-1]
+        dialog = wx.MessageDialog(None, 'Are you sure you want to remove %s ?'%element.name, 'Confirmation', 
                     wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
-        dialog.ShowModal()
+        if(dialog.ShowModal() == wx.ID_YES):
+            self.propagator.remove_element(self.selected-1)
+            self.selected = 0
+            self.repaint_schematic()
+            #TODO: recalculate z and pulse
         
         event.Skip()
 
@@ -274,7 +286,7 @@ class VFFrame(wx.Frame):
         event.Skip()
         
     def init_calculations(self):
-        self.propagator = propagator.Propagator(512,32.e-15,8.e-7)
+        self.propagator = propagator.Propagator(64,32.e-15,8.e-7)
         self.propagator.example_pulseBeam()
         self.propagator.example_elements()
         
