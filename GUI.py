@@ -6,6 +6,7 @@ import wxversion
 wxversion.ensureMinimal('2.8')
 import wx
 import wx.grid
+import wx.lib.scrolledpanel
     
 import matplotlib as mpl
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
@@ -164,7 +165,6 @@ class VFFrame(wx.Frame):
 
         self.__do_layout()
 
-        self.VFData.Bind(wx.EVT_SIZE, self.grid_resize)
         self.Bind(wx.EVT_MENU, self.menu_open_click, id=-1)
         self.Bind(wx.EVT_MENU, self.menu_save_click, id=-1)
         self.Bind(wx.EVT_MENU, self.menu_exit_click, id=-1)
@@ -175,25 +175,36 @@ class VFFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.removebutton_click, self.RemoveButton)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.distanceslider_change, self.DistanceSlider)
         
-        self.SchematicPanel.Bind(wx.EVT_PAINT, self.repaint_schematic) 
+        #self.SchematicPanel.Bind(wx.EVT_PAINT, self.repaint_schematic) 
+        self.Bind(wx.EVT_PAINT, self.paint_event) 
+        self.SchematicPanel.Bind(wx.EVT_LEFT_UP, self.click_schematic) 
+    
         # end wxGlade
         
         self.init_calculations()
         self.refresh_interface()
         self.refresh_grid_information()
+        self.repaint_schematic()
 
     def __set_properties(self):
         # begin wxGlade: VFFrame.__set_properties
         self.SetTitle("Virtual Femtolab")
         self.SetSize((900,675))
-        self.VFData.CreateGrid(12, 3)
+        self.VFData.CreateGrid(13, 3)
         self.VFData.SetRowLabelSize(0)
         self.VFData.SetColLabelSize(0)
         self.VFData.EnableEditing(0)
         self.VFData.SetColLabelValue(0, "Name")
         self.VFData.SetColLabelValue(1, "Value")
         self.VFData.SetColLabelValue(2, "Units")
-        self.SchematicPanel.SetMinSize((800, 150))
+        self.VFData.SetSize((255, 150)) #150 is wrong, but it works anyway. 255 is hardcoded - TODO:fix
+        self.SchematicPanel.SetSize((890, 130))
+        size = self.SchematicPanel.GetClientSize()
+        self.buffer = wx.EmptyBitmap(size.width, size.height)
+        self.dc = wx.BufferedDC(None, self.buffer)
+        #self.dc.SetBackground(wx.Brush(self.SchematicPanel.GetBackgroundColour()))
+        self.dc.Clear()
+        
         # end wxGlade
 
     def __do_layout(self):
@@ -209,8 +220,8 @@ class VFFrame(wx.Frame):
         self.sizer_8.Add(self.EditButton, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
         self.sizer_8.Add(self.RemoveButton, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
         self.sizer_7.Add(self.sizer_8,0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
-        self.sizer_6.Add(self.VFData,1,wx.EXPAND,0)
         self.sizer_6.Add(self.sizer_7, 3, wx.EXPAND, 0)
+        self.sizer_6.Add(self.VFData,0,wx.EXPAND,0)
         self.sizer_2.Add(self.sizer_6, 1, wx.EXPAND, 0)
         self.sizer_9.Add(self.SchematicPanel, 5, wx.EXPAND, 0)
         self.sizer_9.Add(self.DistanceSlider, 1, wx.EXPAND, 0)
@@ -266,6 +277,7 @@ class VFFrame(wx.Frame):
         self.propagator.example_elements()
         
         self.distance = 0
+        self.selected = 1
 
     def change_distance(self, distance):
         # Recalculate everything
@@ -274,8 +286,7 @@ class VFFrame(wx.Frame):
         # Refresh interface/redraw
         self.refresh_interface()
         self.refresh_grid_information()
-        #how to force a schematic redraw: 
-        self.Layout()
+        self.repaint_schematic()
     
     def refresh_interface(self):
         pulseBeam = self.propagator.get_pulseBeam()
@@ -326,7 +337,9 @@ class VFFrame(wx.Frame):
         self.VFData.SetCellValue(10,2,'MHz')
         self.VFData.SetCellValue(11,0,'CW Power')
         self.VFData.SetCellValue(11,2,'W')
-        #L = ? TODO
+        self.VFData.SetCellValue(12,0,'z')
+        self.VFData.SetCellValue(12,2,'m')
+
         
         
         
@@ -359,38 +372,42 @@ class VFFrame(wx.Frame):
             self.VFData.SetCellValue(10,1,'%3.3e'%(rep_rate*1e-6))
             self.VFData.SetCellValue(10,2,'MHz')
         self.VFData.SetCellValue(11,1,'%3.3e'%(pulseBeam.calc_CW_power()))
+        self.VFData.SetCellValue(12,1,'%3.3e'%(self.distance))
 
         self.VFData.Fit()
-        
-    def grid_resize(self,event):
-        #fix the grid width (otherwise whitespace would appear)
+    
+    def click_schematic(self,event):
 
-        width = 0
-        for i in xrange(3):
-            width += self.VFData.GetColSize(i)
-        
-        new_size = (width,self.VFData.GetSize()[1])
-        print new_size
-        #self.VFData.SetClientSize(new_size)    
-        #self.sizer_6.SetMinSize(new_size)    
-        #self.Fit()
-        print width,'----',self.VFData.GetSize()
-        print '-2-',self.VFData.GetSize()
+        x = event.GetPosition()[0]
+        #TODO: account for scolling
+        i = int(x/105)
 
-        #self.Fit()
-        event.Skip()
+        if(i <= len(self.propagator.get_elements())):
+            self.selected = i
+            
+        self.repaint_schematic()
         
-    def repaint_schematic(self,event):
-        dc = wx.PaintDC(self.SchematicPanel)
+    def paint_event(self,event):
+        dc = wx.BufferedPaintDC(self.SchematicPanel, self.buffer)
+    
         
-        box = self.SchematicPanel.GetSizeTuple()
-        width = 120
-        height = box[1]*0.5 #TODO: fix hack
+    def repaint_schematic(self):
+        dc = wx.BufferedPaintDC(self.SchematicPanel, self.buffer)
+        dc.BeginDrawing()
+        dc.Clear()
+
+        #box = self.SchematicPanel.GetSizeTuple()
+        width = 100
+        height = 100   
         
         x = 5
         
         text = '6.6 fs' #TODO: fix
-        draw_schematic.draw_initial_pulse(dc,x,width,height,text,True) 
+        if(self.selected == 0):
+            selected = True
+        else:
+            selected = False
+        draw_schematic.draw_initial_pulse(dc,x,width,height,text,selected) 
         x += width+5
         
         elements = self.propagator.get_elements()
@@ -400,12 +417,18 @@ class VFFrame(wx.Frame):
         for i in xrange(len(elements)):
             spot_in  = spots[2*i+0]
             spot_out = spots[2*i+1]
-            draw_schematic.draw_element(dc,x,width,height,elements[i],str(elements[i].__class__),False,spot_in,spot_out)
+            if(self.selected == i+1):
+                selected = True
+            else:
+                selected = False
+
+            draw_schematic.draw_element(dc,x,width,height,elements[i],str(elements[i].__class__),selected,spot_in,spot_out)
             x += width+5
-            
-        #print 'paint',event,self.SchematicPanel.GetUpdateRegion().GetBox()
-        event.Skip()
+
+        #event.Skip()
+        dc.EndDrawing()
         
+
 
 
 # end of class VFFrame

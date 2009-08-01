@@ -79,7 +79,7 @@ def draw_element(dc,x,width,height,element,type,selected,beam_size_in,beam_size_
     
     
 def draw_propagation(dc,x,width,height,element,selected,beam_size_in,beam_size_out):
-   
+
     helper_draw_box(dc,x,width,height,selected)
 
     #draw beam propagation
