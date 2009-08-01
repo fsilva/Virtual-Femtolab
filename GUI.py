@@ -48,7 +48,7 @@ class FourPlots(wx.Panel):
 
         self.plot_init = False
 
-    def redraw(self, t_envelope, envelope, electric_field, t_phase, temporal_phase, freq, spectrum, freq_phase, spectral_phase, inter_autoco,inter_autoco_env,inten_autoco, autoco_fft, frog):
+    def redraw(self, t_envelope, envelope, electric_field, t_phase, temporal_phase, freq, spectrum, freq_phase, spectral_phase, inter_autoco, inten_autoco, autoco_fft, frog, frog_limits):
         if(self.plot_init == False):
             #temporal profile
             self.plot1_line1, = self.plot1.plot(t_envelope, envelope, 'r')
@@ -70,14 +70,12 @@ class FourPlots(wx.Panel):
             
             #autoco
             self.plot3_line1, = self.plot3.plot(t_envelope, inter_autoco, 'b')
-            self.plot3_line2, = self.plot3.plot(t_envelope, inter_autoco_env, 'g')
-            self.plot3_line3, = self.plot3.plot(t_envelope, inten_autoco, 'r')            
+            self.plot3_line2, = self.plot3.plot(t_envelope, inten_autoco, 'r')            
 #            self.plot3_twinx = self.plot2.twinx()  #TODO: add autocoFFT
 #            self.plot3_line2, = self.plot2_twinx.plot(autoco_fft, 'k')
 
             #SHG FROG
-            extent = 0,1,0,1
-            self.plot4_imshow = self.plot4.imshow(frog, interpolation='bilinear')#,extent=extent,aspect="auto")
+            self.plot4_imshow = self.plot4.imshow(frog, interpolation='bilinear',extent=frog_limits,aspect="auto")
             #TODO: change bilinear to better, but also fast, interpolation
             #extent = pulsebeam.FROGxmin+k*pulsebeam.FROGdeltax, pulsebeam.FROGxmin+l*pulsebeam.FROGdeltax, \
             #             pulsebeam.FROGymin+i*pulsebeam.FROGdeltay, pulsebeam.FROGymin+j*pulsebeam.FROGdeltay
@@ -109,8 +107,7 @@ class FourPlots(wx.Panel):
             
             #Autoco
             self.plot3_line1.set_ydata(inter_autoco)
-            self.plot3_line2.set_ydata(inter_autoco_env)
-            self.plot3_line3.set_ydata(inten_autoco)
+            self.plot3_line2.set_ydata(inten_autoco)
             #TODO: add autocofft
             #SHG FROG
             self.plot4_imshow.set_data(frog)
@@ -153,7 +150,7 @@ class VFFrame(wx.Frame):
         self.AddButton = wx.Button(self, wx.ID_ADD, "")
         self.EditButton = wx.Button(self, wx.ID_PROPERTIES, "")
         self.RemoveButton = wx.Button(self, wx.ID_REMOVE, "")
-        self.VFData = wx.grid.Grid(self, -1, size=(1, 1))
+        self.VFData = wx.grid.Grid(self)#, -1,  size=(255,400))
         self.SchematicPanel = wx.Panel(self, -1)
         self.DistanceSlider = wx.Slider(self, -1, 0, 0, 1000)
 
@@ -167,7 +164,7 @@ class VFFrame(wx.Frame):
 
         self.__do_layout()
 
-        self.Bind(wx.EVT_SIZE, self.resize)
+        self.VFData.Bind(wx.EVT_SIZE, self.grid_resize)
         self.Bind(wx.EVT_MENU, self.menu_open_click, id=-1)
         self.Bind(wx.EVT_MENU, self.menu_save_click, id=-1)
         self.Bind(wx.EVT_MENU, self.menu_exit_click, id=-1)
@@ -196,30 +193,30 @@ class VFFrame(wx.Frame):
         self.VFData.SetColLabelValue(0, "Name")
         self.VFData.SetColLabelValue(1, "Value")
         self.VFData.SetColLabelValue(2, "Units")
-        self.SchematicPanel.SetMinSize((800, 200))
+        self.SchematicPanel.SetMinSize((800, 150))
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: VFFrame.__do_layout
-        sizer_1 = wx.BoxSizer(wx.VERTICAL)
-        sizer_2 = wx.BoxSizer(wx.VERTICAL)
-        sizer_9 = wx.BoxSizer(wx.VERTICAL)
-        sizer_6 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_7 = wx.BoxSizer(wx.VERTICAL)
-        sizer_8 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_7.Add(self.plot, 1, wx.EXPAND, 0)
-        sizer_8.Add(self.AddButton, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
-        sizer_8.Add(self.EditButton, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
-        sizer_8.Add(self.RemoveButton, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
-        sizer_7.Add(sizer_8, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
-        sizer_6.Add(sizer_7, 3, wx.EXPAND, 0)
-        sizer_6.Add(self.VFData, 1, wx.EXPAND|wx.ALIGN_RIGHT, 0)
-        sizer_2.Add(sizer_6, 3, wx.EXPAND, 0)
-        sizer_9.Add(self.SchematicPanel, 1, wx.EXPAND, 0)
-        sizer_9.Add(self.DistanceSlider, 0, wx.EXPAND, 0)
-        sizer_2.Add(sizer_9, 1, wx.EXPAND, 0)
-        sizer_1.Add(sizer_2, 1, wx.EXPAND, 0)
-        self.SetSizer(sizer_1)
+        self.sizer_1 = wx.BoxSizer(wx.VERTICAL)
+        self.sizer_2 = wx.BoxSizer(wx.VERTICAL)
+        self.sizer_9 = wx.BoxSizer(wx.VERTICAL)
+        self.sizer_6 = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer_7 = wx.BoxSizer(wx.VERTICAL)
+        self.sizer_8 = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer_7.Add(self.plot, 1, wx.EXPAND, 0)
+        self.sizer_8.Add(self.AddButton, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        self.sizer_8.Add(self.EditButton, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        self.sizer_8.Add(self.RemoveButton, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        self.sizer_7.Add(self.sizer_8,0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        self.sizer_6.Add(self.VFData,1,wx.EXPAND,0)
+        self.sizer_6.Add(self.sizer_7, 3, wx.EXPAND, 0)
+        self.sizer_2.Add(self.sizer_6, 1, wx.EXPAND, 0)
+        self.sizer_9.Add(self.SchematicPanel, 5, wx.EXPAND, 0)
+        self.sizer_9.Add(self.DistanceSlider, 1, wx.EXPAND, 0)
+        self.sizer_2.Add(self.sizer_9, 0, wx.EXPAND, 0)
+        self.sizer_1.Add(self.sizer_2, 1, wx.EXPAND, 0)
+        self.SetSizer(self.sizer_1)
         self.Layout()
         # end wxGlade
 
@@ -264,7 +261,7 @@ class VFFrame(wx.Frame):
         event.Skip()
         
     def init_calculations(self):
-        self.propagator = propagator.Propagator(256,64.e-15,8.e-7)
+        self.propagator = propagator.Propagator(512,32.e-15,8.e-7)
         self.propagator.example_pulseBeam()
         self.propagator.example_elements()
         
@@ -300,10 +297,9 @@ class VFFrame(wx.Frame):
         freq_phase,spectral_phase = pulseBeam.phase_blank(freq_phase,spectrum,spectral_phase,1e-2)
         
         inter_autoco     = pulseBeam.get_interferometric_autoco()
-        inter_autoco_env = pulseBeam.get_interferometric_autoco_envelope()        
         inten_autoco     = pulseBeam.get_intensiometric_autoco()
-        frog = pulseBeam.get_SHGFROG()
-        self.plot.redraw(t,envelope,electric_field,t_phase,temporal_phase,freq,spectrum,freq_phase,spectral_phase,inter_autoco,inter_autoco_env,inten_autoco,0,frog)
+        frog, frog_limits = pulseBeam.get_SHGFROG()
+        self.plot.redraw(t,envelope,electric_field,t_phase,temporal_phase,freq,spectrum,freq_phase,spectral_phase,inter_autoco,inten_autoco,0,frog,frog_limits)
         
     def init_grid_information(self):
         self.VFData.SetDefaultCellFont(wx.Font(12, wx.FONTFAMILY_SWISS, wx.NORMAL, wx.FONTWEIGHT_NORMAL))
@@ -366,10 +362,22 @@ class VFFrame(wx.Frame):
 
         self.VFData.Fit()
         
-    def resize(self,event):
-        print 'resize not implemented'
-        #TODO: resize properties table
-        print event.GetSize()
+    def grid_resize(self,event):
+        #fix the grid width (otherwise whitespace would appear)
+
+        width = 0
+        for i in xrange(3):
+            width += self.VFData.GetColSize(i)
+        
+        new_size = (width,self.VFData.GetSize()[1])
+        print new_size
+        #self.VFData.SetClientSize(new_size)    
+        #self.sizer_6.SetMinSize(new_size)    
+        #self.Fit()
+        print width,'----',self.VFData.GetSize()
+        print '-2-',self.VFData.GetSize()
+
+        #self.Fit()
         event.Skip()
         
     def repaint_schematic(self,event):

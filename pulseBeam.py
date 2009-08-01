@@ -49,10 +49,8 @@ class pulseBeam:
         
         self.FROGxmin   = pulseBeam.FROGxmin
         self.FROGxmax   = pulseBeam.FROGxmax
-        self.FROGdeltax = pulseBeam.FROGdeltax
         self.FROGymin   = pulseBeam.FROGymin
         self.FROGymax   = pulseBeam.FROGymax
-        self.FROGdeltay = pulseBeam.FROGdeltay
         
         self.BeamProfile_spot      = pulseBeam.BeamProfile_spot 
         self.BeamProfile_curvature = pulseBeam.BeamProfile_curvature
@@ -239,10 +237,9 @@ class pulseBeam:
         
         
     def calculate_autoco(self):
-    #calculates 4 things:
+    #calculates 3 things:
     #   -interferometric autoco (if sampling rate is sufficient)
     #   -intensiometric autoco
-    #   -interferometric autoco envelope
     #   -interferometric autoco FFT (if sampling rate is sufficient) #TODO
     
     #interferometric autoco calculation from Joao Silva
@@ -256,11 +253,6 @@ class pulseBeam:
 
         #4I(t)I(t-tau)
         self.IntensiometricAutoCo[:] = 4.0*correlate(I,I,"full")[self.NT/2:self.NT*3/2]
-        
-        self.InterferometricAutoCoEnvelope[:] = self.calculate_autoco_helper(self.ElectricField)
-        
-        print 'Interferometric envelope TODO'
-        
     
 #negative delay
         #for i in xrange(0,self.NT/2+1,1):
@@ -283,10 +275,6 @@ class pulseBeam:
         self.InterferometricAutoCo -= min(abs(self.InterferometricAutoCo))
         self.InterferometricAutoCo /= max(abs(self.InterferometricAutoCo))
         self.InterferometricAutoCo *= 8
-        self.InterferometricAutoCoEnvelope -= min(abs(self.InterferometricAutoCoEnvelope))
-        self.InterferometricAutoCoEnvelope /= max(abs(self.InterferometricAutoCoEnvelope))
-        self.InterferometricAutoCoEnvelope *= 7
-        self.InterferometricAutoCoEnvelope += 1
         self.IntensiometricAutoCo -= min(abs(self.IntensiometricAutoCo))
         self.IntensiometricAutoCo /= max(abs(self.IntensiometricAutoCo))
         self.IntensiometricAutoCo *= 2
@@ -304,10 +292,8 @@ class pulseBeam:
         
         self.FROGxmin   = self.t[0]
         self.FROGxmax   = self.t[-1]
-        self.FROGdeltax = (self.t[-1]-self.t[0])/self.NT
-        self.FROGymin   = self.frequencies[0]
-        self.FROGymax   = self.frequencies[-1]
-        self.FROGdeltay = (self.frequencies[-1]-self.frequencies[0])/self.NT
+        self.FROGymin   = self.get_frequencies()[0]
+        self.FROGymax   = self.get_frequencies()[-1]
         
         ElectricField = real(self.ElectricField)
         # complex field
@@ -440,14 +426,12 @@ class pulseBeam:
     def get_interferometric_autoco(self):
         return self.InterferometricAutoCo
 
-    def get_interferometric_autoco_envelope(self):
-        return self.InterferometricAutoCoEnvelope
-
     def get_intensiometric_autoco(self):
         return self.IntensiometricAutoCo
         
     def get_SHGFROG(self):
-        return self.FROG
+        frog_limits = self.FROGxmin,self.FROGxmax,self.FROGymin,self.FROGymax
+        return self.FROG,frog_limits
         
     def phase_blank(self,t,data_array,phase_array,threshold): #TODO: speed this up, perhaps
         absarray = abs(data_array)
