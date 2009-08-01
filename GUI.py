@@ -201,9 +201,9 @@ class VFFrame(wx.Frame):
         self.SchematicPanel.SetSize((890, 130))
         size = self.SchematicPanel.GetClientSize()
         self.buffer = wx.EmptyBitmap(size.width, size.height)
-        self.dc = wx.BufferedDC(None, self.buffer)
-        #self.dc.SetBackground(wx.Brush(self.SchematicPanel.GetBackgroundColour()))
-        self.dc.Clear()
+        self.dc = wx.BufferedDC(None, self.buffer )
+        #self.dc.SetBackground(wx.Brush('gray'))
+        #self.dc.Clear()
         
         # end wxGlade
 
@@ -240,8 +240,7 @@ class VFFrame(wx.Frame):
         event.Skip()
 
     def menu_exit_click(self, event): # wxGlade: VFFrame.<event_handler>
-        print "Event handler `menu_exit_click' not implemented!"
-        event.Skip()
+        self.Close()
 
     def menu_exportplots_click(self, event): # wxGlade: VFFrame.<event_handler>
         print "Event handler `menu_exportplots_click' not implemented!"
@@ -252,7 +251,7 @@ class VFFrame(wx.Frame):
         event.Skip()
 
     def addbutton_click(self, event): # wxGlade: VFFrame.<event_handler>
-        print "Event handler `addbutton_click' not implemented!"
+        # Open add dialog
         event.Skip()
 
     def editbutton_click(self, event): # wxGlade: VFFrame.<event_handler>
@@ -260,7 +259,7 @@ class VFFrame(wx.Frame):
         event.Skip()
 
     def removebutton_click(self, event): # wxGlade: VFFrame.<event_handler>
-        print "Event handler `removebutton_click' not implemented!"
+        # ask for confirmation
         event.Skip()
 
     def distanceslider_change(self, event): # wxGlade: VFFrame.<event_handler>
@@ -393,6 +392,8 @@ class VFFrame(wx.Frame):
         
     def repaint_schematic(self):
         dc = wx.BufferedPaintDC(self.SchematicPanel, self.buffer)
+        #dc.SetBackground(wx.Brush(self.GetBackgroundColour()))
+        dc.SetBackground(wx.Brush('#efefef'))
         dc.BeginDrawing()
         dc.Clear()
 
