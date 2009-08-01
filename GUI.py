@@ -259,7 +259,10 @@ class VFFrame(wx.Frame):
         event.Skip()
 
     def removebutton_click(self, event): # wxGlade: VFFrame.<event_handler>
-        # ask for confirmation
+        dialog = wx.MessageDialog(None, 'Are you sure you want to remove %s ?'%'cena', 'Confirmation', 
+                    wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+        dialog.ShowModal()
+        
         event.Skip()
 
     def distanceslider_change(self, event): # wxGlade: VFFrame.<event_handler>
