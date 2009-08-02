@@ -180,9 +180,9 @@ class EditInitialPulse(wx.Frame):
         self.spectralFWHM.SetValue(str(ipb.initialSpectralFWHM*1e9))
         
         #phase
-        self.gvd.SetValue(str(ipb.initialGVD*1e-30))
-        self.tod.SetValue(str(ipb.initialTOD*1e-45))
-        self.fod.SetValue(str(ipb.initialFOD*1e-60))
+        self.gvd.SetValue(str(ipb.initialGVD*1e30))
+        self.tod.SetValue(str(ipb.initialTOD*1e45))
+        self.fod.SetValue(str(ipb.initialFOD*1e60))
         
         #beam spot and curvature
         self.spotsize.SetValue(str(ipb.BeamProfile_spot*1000))
@@ -192,7 +192,7 @@ class EditInitialPulse(wx.Frame):
         #energy/etc
         self.rate.SetValue(str(ipb.rate*0.001))
         self.peakpower.SetValue(str(ipb.peak_power*1e-6))
-        self.pulseenergy.SetValue(str(ipb.energy*1e-6))
+        self.pulseenergy.SetValue(str(ipb.energy*1e6))
         if(ipb.energy == 0):
             self.radio_btn_3_copy.SetValue(1)
         else:
@@ -226,7 +226,7 @@ class EditInitialPulse(wx.Frame):
                 self.peakpower.SetValue(str(self.initialPulseBeam.peak_power*1e-6))
         else: #energy
             try:
-                self.initialPulseBeam.energy = float(self.pulseneergy.GetValue())*1000
+                self.initialPulseBeam.energy = float(self.pulseenergy.GetValue())*1e-6
                 self.initialPulseBeam.peak_power = 0
             except:
                 self.pulseenergy.SetValue(str(self.initialPulseBeam.energy*1e-6))
@@ -243,15 +243,15 @@ class EditInitialPulse(wx.Frame):
             
         #phase
         try:
-            self.initialPulseBeam.initialGVD = float(self.gvd.GetValue())*1e30
+            self.initialPulseBeam.initialGVD = float(self.gvd.GetValue())*1e-30
         except:
             self.gvd.SetValue(str(self.initialPulseBeam.initialGVD*1e-30))
         try:
-            self.initialPulseBeam.initialTOD = float(self.tod.GetValue())*1e45
+            self.initialPulseBeam.initialTOD = float(self.tod.GetValue())*1e-45
         except:
             self.tod.SetValue(str(self.initialPulseBeam.initialTOD*1e-30))
         try:
-            self.initialPulseBeam.initialFOD = float(self.fod.GetValue())*1e60
+            self.initialPulseBeam.initialFOD = float(self.fod.GetValue())*1e-60
         except:
             self.fod.SetValue(str(self.initialPulseBeam.initialFOD*1e-30))    
             
@@ -273,6 +273,7 @@ class EditInitialPulse(wx.Frame):
                 self.temporalFWHM.SetValue(str(self.initialPulseBeam.initialTemporalFWHM*1e15))
         elif(self.radio_btn_2.GetValue()==1):
             try:
+                print 'yeah'
                 self.initialPulseBeam.initialSpectralFWHM = float(self.spectralFWHM.GetValue())*1e-9
                 self.initialPulseBeam.initialize_spectrum(self.initialPulseBeam.initialSpectralFWHM,
                                                        self.initialPulseBeam.initialGVD,

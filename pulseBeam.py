@@ -28,7 +28,7 @@ class pulseBeam:
         #self.frequencies[:self.NT/4] = arange(-self.NT/self.deltaT/4.,0,1/self.deltaT)
         #self.frequencies[self.NT/4:] = arange(0,self.NT/self.deltaT/4.,1/self.deltaT)
         self.frequencies           = 2*pi*fftfreq(self.NT,self.deltaT/self.NT)
-        self.wavelengths           = 3e8/self.frequencies   
+        self.wavelengths           = 3e8/(self.frequencies/2/pi+self.freqZero)   
         self.t                     = arange(-self.deltaT/2,self.deltaT/2,self.deltaT/self.NT) 
         self.energy                = 0
         self.peak_power            = 0
@@ -75,7 +75,7 @@ class pulseBeam:
         self.rate = pulseBeam.rate
 
     def update_spectrum(self):
-        self.Spectrum[:] = roll(self.FFT,self.NT)**2
+        self.Spectrum[:] = self.FFT**2
         
     def field_to_spectrum(self):
         self.FFT[:] = fft(self.ElectricField) #fft(ifftshift(self.ElectricField[:])) 
@@ -87,7 +87,7 @@ class pulseBeam:
         #self.FFT[:]=zeros((self.NT))
         #self.FFT[3*self.NT/4:] = sqrt(self.Spectrum[:self.NT/4])
         #self.FFT[:self.NT/4]   = sqrt(self.Spectrum[self.NT/4:])
-        self.ElectricField[:] = ifft(self.FFT[:])
+        self.ElectricField[:] = ifft(self.FFT)
         
         
     def initialize_pulse(self, timeFWHM, GVD,TOD,FOD, spot, curvature, peak_power, energy, rate):
@@ -115,11 +115,11 @@ class pulseBeam:
         self.field_to_spectrum()
         self.apply_dispersion(GVD,TOD,FOD)
         self.spectrum_to_field()
-        
+   
         
         
     
-    def initialize_spectrum(self, deltaFreq, GVD, TOD, FOD, spot, curvature, peak_power, energy, rate):   
+    def initialize_spectrum(self, spectralfwhm, GVD, TOD, FOD, spot, curvature, peak_power, energy, rate):   
         self.BeamProfile_spot = spot
         self.BeamProfile_curvature = curvature 
         self.energy = energy
@@ -131,14 +131,19 @@ class pulseBeam:
         self.initialFOD = FOD
         
         self.initialTemporalFWHM = 0
-        self.initialSpectralFWHM = deltaFreq 
+        self.initialSpectralFWHM = spectralfwhm
         print 'maybe this is wrong. initialize_spectrum at pulsebeam'
         
-        freq = self.frequencies#-self.freqZero
-        self.Spectrum[:] = exp(-freq**2/2/deltaFreq**2)
-                        
+        deltaFreq = 3e8/self.lambdaZero**2*spectralfwhm/2.35
+        
+        freq = self.frequencies/2/pi
+        self.FFT[:] = exp(-freq**2/2/deltaFreq**2)
+        
         self.apply_dispersion(GVD,TOD,FOD) 
         self.spectrum_to_field()
+
+        #field is shifted due to fft, shift it back
+        self.ElectricField = fftshift(self.ElectricField)
         
         self.rescale_field_to_energy_or_peak_power()
             

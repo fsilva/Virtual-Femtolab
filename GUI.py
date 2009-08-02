@@ -87,6 +87,9 @@ class FourPlots(wx.Panel):
             self.plot1_line1.set_ydata(envelope)
             if(not electric_field is None):
                 self.plot1_line2.set_ydata(electric_field)
+                self.plot1.set_ylim((min(electric_field),max(envelope)))
+            else:
+                self.plot1.set_ylim((min(envelope),max(envelope)))
                 
             self.plot1_line3.set_data(t_phase,temporal_phase)
             max_phase = max(temporal_phase)
@@ -99,6 +102,7 @@ class FourPlots(wx.Panel):
             
             #spectral profile
             self.plot2_line1.set_ydata(spectrum)
+            self.plot2.set_ylim((min(spectrum),max(spectrum)))
             self.plot2_line2.set_data(freq_phase,spectral_phase)
             
             if(len(spectral_phase) != 0):
@@ -314,7 +318,7 @@ class VFFrame(wx.Frame):
         self.propagator.example_elements()
         
         self.distance = 0
-        self.selected = 1
+        self.selected = 0
         
         
 
