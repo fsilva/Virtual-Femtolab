@@ -39,6 +39,9 @@ class Propagator:
     def get_elements(self):
         return self.elements
         
+    def get_materials(self):
+        return element_propagation.materials
+        
         
     def get_max_z(self):
         z0 = 0
@@ -95,16 +98,6 @@ class Propagator:
             
         return spots
         
-        
-    def open_edit_dialog(self,selected,refresh_callback):
-        if(selected == 0):
-            self.initial_pulse_open_edit_dialog(refresh_callback)
-        elif(selected <= len(self.elements)):
-            self.elements[selected-1].open_edit_dialog(refresh_callback)
-            #-1 because 0 is the initial pulse
-            
-    def initial_pulse_open_edit_dialog(self,refresh_callback):
-        self.initialpulse_dialog = initialpulse_dialog.InitialPulse_Dialog(self.initialPulseBeam,refresh_callback,self.config)
         
     def add_element(self,element_type,position):
         if(element_type == 'Material Propagation'):

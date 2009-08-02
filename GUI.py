@@ -216,9 +216,9 @@ class VFFrame(wx.Frame):
         self.sizer_7 = wx.BoxSizer(wx.VERTICAL)
         self.sizer_8 = wx.BoxSizer(wx.HORIZONTAL)
         self.sizer_7.Add(self.plot, 1, wx.EXPAND, 0)
-        self.sizer_8.Add(self.AddButton, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
-        self.sizer_8.Add(self.EditButton, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
-        self.sizer_8.Add(self.RemoveButton, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        self.sizer_8.Add(self.AddButton, 0, wx.ALL|wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 5)
+        self.sizer_8.Add(self.EditButton, 0, wx.ALL|wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 5)
+        self.sizer_8.Add(self.RemoveButton, 0, wx.ALL|wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 5)
         self.sizer_7.Add(self.sizer_8,0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
         self.sizer_6.Add(self.sizer_7, 3, wx.EXPAND, 0)
         self.sizer_6.Add(self.VFData,0,wx.EXPAND,0)
@@ -251,14 +251,27 @@ class VFFrame(wx.Frame):
         event.Skip()
 
     def addbutton_click(self, event): # wxGlade: VFFrame.<event_handler>
+        event.Skip()
         # Open add dialog
         import add_dialog
         dialog = add_dialog.AddDialog(self)
-        dialog.set_info(self.selected, self.propagator.add_element,self.repaint_schematic)
+        dialog.set_info(self.selected, self.propagator.add_element,self.refresh_everything) 
         dialog.Show()
 
     def editbutton_click(self, event): # wxGlade: VFFrame.<event_handler>
-        print "Event handler `editbutton_click' not implemented!"
+        name = str(self.propagator.get_elements()[self.selected-1].__class__)
+
+        if(name == 'element_propagation.Element_Propagation'):
+            import edit_materialpropagation
+            dialog = edit_materialpropagation.EditMaterialPropagation(self)
+            dialog.set_info(self.propagator.get_elements()[self.selected-1],self.propagator.get_materials(),self.refresh_everything)
+            dialog.Show()
+        elif(name == 'element_thinlens.Element_ThinLens'):
+            import edit_thinlens
+            dialog = edit_thinlens.EditThinLens(self)
+            dialog.set_info(self.propagator.get_elements()[self.selected-1],self.refresh_everything)
+            dialog.Show()
+            
         event.Skip()
 
     def removebutton_click(self, event): # wxGlade: VFFrame.<event_handler>
@@ -272,18 +285,20 @@ class VFFrame(wx.Frame):
         if(dialog.ShowModal() == wx.ID_YES):
             self.propagator.remove_element(self.selected-1)
             self.selected = 0
-            self.repaint_schematic()
-            #TODO: recalculate z and pulse
+            self.refresh_everything()
         
         event.Skip()
+        
+        
 
     def distanceslider_change(self, event): # wxGlade: VFFrame.<event_handler>
         distance = self.DistanceSlider.GetValue()/1000.*self.propagator.get_max_z()
         if(abs(self.distance-distance) > 1e-15):
-            self.distance = distance
             self.change_distance(distance)
 
         event.Skip()
+        
+        
         
     def init_calculations(self):
         self.propagator = propagator.Propagator(64,32.e-15,8.e-7)
@@ -292,15 +307,34 @@ class VFFrame(wx.Frame):
         
         self.distance = 0
         self.selected = 1
+        
+        
 
     def change_distance(self, distance):
         # Recalculate everything
+        
+        #keep within bounds
+        if(distance < 0):
+            distance = 0
+        max_distance = self.propagator.get_max_z()
+        if(distance > max_distance):
+            distance = max_distance
+            
+        #recalculate
+        self.distance = distance 
         self.propagator.change_z(distance)
     
         # Refresh interface/redraw
         self.refresh_interface()
         self.refresh_grid_information()
         self.repaint_schematic()
+        
+        
+        
+    def refresh_everything(self):
+        self.change_distance(self.distance)
+        
+        
     
     def refresh_interface(self):
         pulseBeam = self.propagator.get_pulseBeam()
@@ -325,6 +359,8 @@ class VFFrame(wx.Frame):
         inten_autoco     = pulseBeam.get_intensiometric_autoco()
         frog, frog_limits = pulseBeam.get_SHGFROG()
         self.plot.redraw(t,envelope,electric_field,t_phase,temporal_phase,freq,spectrum,freq_phase,spectral_phase,inter_autoco,inten_autoco,0,frog,frog_limits)
+        
+        
         
     def init_grid_information(self):
         self.VFData.SetDefaultCellFont(wx.Font(12, wx.FONTFAMILY_SWISS, wx.NORMAL, wx.FONTWEIGHT_NORMAL))
