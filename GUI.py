@@ -439,11 +439,23 @@ class VFFrame(wx.Frame):
         self.VFData.Fit()
     
     def click_schematic(self,event):
+        
+        width = 120
 
         x = event.GetPosition()[0]
         
-        #TODO: account for scolling
-        i = int(x/125)
+        elements = self.propagator.get_elements()
+        
+        #calculate how much to scroll
+        total_width = (width+5)*(len(elements)+1)
+        available_width = self.SchematicPanel.GetSizeTuple()[0]-10
+
+        if(available_width > total_width):
+            x -= 5
+        else:
+            x -= 5-self.distance/self.propagator.get_max_z()*(total_width-available_width)
+            
+        i = int(x/(width+5))
         
         print 'TODO: click_schematic() - 120 needs to become global'
 
@@ -463,11 +475,19 @@ class VFFrame(wx.Frame):
         dc.BeginDrawing()
         dc.Clear()
 
-        #box = self.SchematicPanel.GetSizeTuple()
         width = 120
         height = 100   
         
-        x = 5
+        elements = self.propagator.get_elements()
+        
+        #calculate how much to scroll
+        total_width = (width+5)*(len(elements)+1)
+        available_width = self.SchematicPanel.GetSizeTuple()[0]-10
+
+        if(available_width > total_width):
+            x = 5
+        else:
+            x = 5-self.distance/self.propagator.get_max_z()*(total_width-available_width)
         
         text = '6.6 fs' #TODO: fix
         if(self.selected == 0):
@@ -478,7 +498,7 @@ class VFFrame(wx.Frame):
         draw_schematic.draw_initial_pulse(dc,x,width,height,text,selected) 
         x += width+5
         
-        elements = self.propagator.get_elements()
+        
         spots = self.propagator.get_spots()
         spots /= max(abs(array(spots)))
         
