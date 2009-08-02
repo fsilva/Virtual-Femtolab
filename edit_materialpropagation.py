@@ -106,7 +106,16 @@ class EditMaterialPropagation(wx.Frame):
         self.text_ctrl_6.SetValue(str(self.element.length))
 
     def listbox_click(self, event): # wxGlade: EditMaterialPropagation.<event_handler>
-        print "Event handler `listbox_click' not implemented!"
+        i = self.list_box_1.GetSelection()
+        if(i == self.list_box_1.GetCount()-1):
+            return #it is 'user defined', do nothing
+        material = self.materials[i]
+        self.text_ctrl_1.SetValue(str(material[0]))
+        self.text_ctrl_2.SetValue(str(material[1]))
+        self.text_ctrl_3.SetValue(str(material[2]*1e30))
+        self.text_ctrl_4.SetValue(str(material[3]*1e45))
+        self.text_ctrl_5.SetValue(str(material[4]*1e60))
+        
         event.Skip()
 
     def refresh_click(self, event): # wxGlade: EditMaterialPropagation.<event_handler>

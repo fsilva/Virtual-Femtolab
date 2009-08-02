@@ -441,8 +441,11 @@ class VFFrame(wx.Frame):
     def click_schematic(self,event):
 
         x = event.GetPosition()[0]
+        
         #TODO: account for scolling
-        i = int(x/105)
+        i = int(x/125)
+        
+        print 'TODO: click_schematic() - 120 needs to become global'
 
         if(i <= len(self.propagator.get_elements())):
             self.selected = i
@@ -471,6 +474,7 @@ class VFFrame(wx.Frame):
             selected = True
         else:
             selected = False
+            
         draw_schematic.draw_initial_pulse(dc,x,width,height,text,selected) 
         x += width+5
         
