@@ -67,6 +67,10 @@ def draw_initial_pulse(dc,x,width,height,text,selected):
     dc.DrawLineList(lines2)
     
     helper_draw_text(dc,x,width,height,'Initial Pulse',text)
+    
+def draw_line(dc,x,height):
+    dc.SetPen(wx.Pen('#ff0000', 2))     
+    dc.DrawLine(x,3,x,height+5)
 
 
 

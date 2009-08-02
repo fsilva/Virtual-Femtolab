@@ -461,7 +461,7 @@ class VFFrame(wx.Frame):
         dc.Clear()
 
         #box = self.SchematicPanel.GetSizeTuple()
-        width = 100
+        width = 120
         height = 100   
         
         x = 5
@@ -478,6 +478,8 @@ class VFFrame(wx.Frame):
         spots = self.propagator.get_spots()
         spots /= max(abs(array(spots)))
         
+        z = 0
+        
         for i in xrange(len(elements)):
             spot_in  = spots[2*i+0]
             spot_out = spots[2*i+1]
@@ -487,6 +489,15 @@ class VFFrame(wx.Frame):
                 selected = False
 
             draw_schematic.draw_element(dc,x,width,height,elements[i],str(elements[i].__class__),selected,spot_in,spot_out)
+            
+            
+            #should we draw the position line in this element?
+            if(z <= self.distance and z+elements[i].length > self.distance):
+                #calc position to draw the line
+                line_x = x+(self.distance-z)/elements[i].length*width
+                draw_schematic.draw_line(dc,line_x,height)
+            
+            z += elements[i].length
             x += width+5
 
         #event.Skip()
