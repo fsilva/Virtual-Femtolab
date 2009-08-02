@@ -101,10 +101,11 @@ class FourPlots(wx.Panel):
             self.plot2_line1.set_ydata(spectrum)
             self.plot2_line2.set_data(freq_phase,spectral_phase)
             
-            max_phase = max(spectral_phase)
-            min_phase = min(spectral_phase)
-            delta = max_phase-min_phase
-            self.plot2_twinx.set_ylim((min_phase-delta/10.,max_phase+delta/10.))
+            if(len(spectral_phase) != 0):
+                max_phase = max(spectral_phase)
+                min_phase = min(spectral_phase)
+                delta = max_phase-min_phase
+                self.plot2_twinx.set_ylim((min_phase-delta/10.,max_phase+delta/10.))
             
             #Autoco
             self.plot3_line1.set_ydata(inter_autoco)
@@ -259,6 +260,13 @@ class VFFrame(wx.Frame):
         dialog.Show()
 
     def editbutton_click(self, event): # wxGlade: VFFrame.<event_handler>
+        if(self.selected == 0):
+            import edit_initialpulse
+            dialog = edit_initialpulse.EditInitialPulse(self)
+            dialog.set_info(self.propagator.get_initialPulseBeam(),self.refresh_everything)
+            dialog.Show()
+            return
+    
         name = str(self.propagator.get_elements()[self.selected-1].__class__)
 
         if(name == 'element_propagation.Element_Propagation'):

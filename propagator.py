@@ -15,11 +15,14 @@ class Propagator:
         
         self.elements = []
         
+    def get_initialPulseBeam(self):
+        return self.initialPulseBeam
+        
     def get_pulseBeam(self):
         return self.pulseBeam
         
     def example_pulseBeam(self):
-        self.initialPulseBeam.initialize_pulse(4e-15,0,0,0,0,1e-6,1e10,0,1e-3,1000)
+        self.initialPulseBeam.initialize_pulse(4e-15,0,0,0,1e-6,1e10,0,1e-3,1000)
         
         self.initialPulseBeam.calculate_autoco()
         self.initialPulseBeam.calculate_FROG()

@@ -35,6 +35,12 @@ class pulseBeam:
         self.rate                  = 0
         self.amplitudeE            = 0
         
+        self.initialGVD            = 0
+        self.initialTOD            = 0
+        self.initialFOD            = 0
+        self.initialTemporalFWHM = 0
+        self.initialSpectralFWHM = 0
+        
     def copy(self,pulseBeam):
         self.ElectricField[:]     = pulseBeam.ElectricField[:]
         self.FFT[:]               = pulseBeam.FFT[:]
@@ -57,6 +63,13 @@ class pulseBeam:
         
         self.amplitudeE = pulseBeam.amplitudeE
         
+        self.initialGVD            = pulseBeam.initialGVD 
+        self.initialTOD            = pulseBeam.initialTOD
+        self.initialFOD            = pulseBeam.initialFOD 
+        
+        self.initialTemporalFWHM = pulseBeam.initialTemporalFWHM
+        self.initialSpectralFWHM = pulseBeam.initialSpectralFWHM
+        
         self.energy = pulseBeam.energy
         self.peak_power = pulseBeam.peak_power
         self.rate = pulseBeam.rate
@@ -77,12 +90,19 @@ class pulseBeam:
         self.ElectricField[:] = ifft(self.FFT[:])
         
         
-    def initialize_pulse(self, timeFWHM, GVD,TOD,QOD,FOD, spot, curvature, peak_power, energy, rate):
+    def initialize_pulse(self, timeFWHM, GVD,TOD,FOD, spot, curvature, peak_power, energy, rate):
         self.BeamProfile_spot = spot
         self.BeamProfile_curvature = curvature
         self.energy = energy
         self.peak_power = peak_power
         self.rate = rate
+        
+        self.initialGVD = GVD
+        self.initialTOD = TOD 
+        self.initialFOD = FOD
+        
+        self.initialTemporalFWHM = timeFWHM
+        self.initialSpectralFWHM = 0
         
         t_sigma = timeFWHM/2.35
         
@@ -93,23 +113,31 @@ class pulseBeam:
         self.rescale_field_to_energy_or_peak_power()
         
         self.field_to_spectrum()
-        self.apply_dispersion(GVD,TOD,QOD,FOD)
+        self.apply_dispersion(GVD,TOD,FOD)
         self.spectrum_to_field()
         
         
         
     
-    def initialize_spectrum(self, deltaFreq, GVD, TOD, QOD, FOD, spot, curvature, peak_power, energy, rate):   
+    def initialize_spectrum(self, deltaFreq, GVD, TOD, FOD, spot, curvature, peak_power, energy, rate):   
         self.BeamProfile_spot = spot
         self.BeamProfile_curvature = curvature 
         self.energy = energy
         self.peak_power = peak_power
         self.rate = rate
         
+        self.initialGVD = GVD
+        self.initialTOD = TOD 
+        self.initialFOD = FOD
+        
+        self.initialTemporalFWHM = 0
+        self.initialSpectralFWHM = deltaFreq 
+        print 'maybe this is wrong. initialize_spectrum at pulsebeam'
+        
         freq = self.frequencies#-self.freqZero
         self.Spectrum[:] = exp(-freq**2/2/deltaFreq**2)
                         
-        self.apply_dispersion(GVD,TOD,QOD,FOD) 
+        self.apply_dispersion(GVD,TOD,FOD) 
         self.spectrum_to_field()
         
         self.rescale_field_to_energy_or_peak_power()
@@ -118,12 +146,16 @@ class pulseBeam:
         
         
         
-    def initialize_spectrum_loaded(self, loader, phaseloader, GVD, TOD, QOD,FOD, spot,curvature, peak_power, energy, rate):  
+    def initialize_spectrum_loaded(self, loader, phaseloader, GVD, TOD,FOD, spot,curvature, peak_power, energy, rate):  
         self.BeamProfile_spot = spot
         self.BeamProfile_curvature = curvature 
         self.energy = energy
         self.peak_power = peak_power
         self.rate = rate
+        
+        self.initialGVD = GVD
+        self.initialTOD = TOD 
+        self.initialFOD = FOD
 
         freq = self.frequencies
         lambdas = 3e8/freq
@@ -137,7 +169,7 @@ class pulseBeam:
         
         self.Spectrum[:] = spec*exp(1j*phase/2.)
             
-        self.apply_dispersion(GVD,TOD,QOD,FOD) 
+        self.apply_dispersion(GVD,TOD,FOD) 
         self.spectrum_to_field()
         
         self.rescale_field_to_energy_or_peak_power()
@@ -155,12 +187,11 @@ class pulseBeam:
         
         
         
-    def apply_dispersion(self,GVD,TOD,QOD,FOD):
+    def apply_dispersion(self,GVD,TOD,FOD):
         freq = self.frequencies#-self.freqZero)
         delta = exp(1j*(freq**2*GVD/2.+ \
                            freq**3*TOD/2./3.+ \
-                           freq**4*QOD/2./3./4.+ \
-                           freq**5*FOD/2./3./4./5.))
+                           freq**4*FOD/2./3./4.))
         #self.Spectrum *= delta
         self.FFT *= delta 
         self.update_spectrum()
