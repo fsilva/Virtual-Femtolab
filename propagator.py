@@ -13,6 +13,8 @@ class Propagator:
         self.initialPulseBeam = pulseBeam.pulseBeam(NT,deltaT,lambdaZero)
         self.pulseBeam = pulseBeam.pulseBeam(NT,deltaT,lambdaZero)
         
+        self.lambdaZero = lambdaZero
+        
         self.elements = []
         
     def get_initialPulseBeam(self):
@@ -33,6 +35,10 @@ class Propagator:
 
     
     def example_elements(self):
+        self.elements.append(element_thinlens.Element_ThinLens(1,self.lambdaZero))
+        self.elements.append(element_propagation.Element_Propagation(0.001,element_propagation.materials[1],self.lambdaZero))
+        self.elements.append(element_thinlens.Element_ThinLens(1,self.lambdaZero))
+        self.elements.append(element_propagation.Element_Propagation(0.001,element_propagation.materials[1],800e-9))
         self.elements.append(element_thinlens.Element_ThinLens(1,800e-9))
         self.elements.append(element_propagation.Element_Propagation(0.001,element_propagation.materials[1],800e-9))
         #self.elements.append(element_propagation.Element_Propagation(0.005,element_propagation.materials[0],800e-9))
