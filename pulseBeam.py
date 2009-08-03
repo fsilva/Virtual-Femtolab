@@ -213,43 +213,68 @@ class pulseBeam:
                 self.Spectrum[i] *= mult_factor
                 self.Spectrum[i] *= mult_factor
             
+            
     def beam_apply_propagation(self,length,n):
+        w, R = self.beam_calc_propagation(length,n)
+
+        self.BeamProfile_curvature = R
+        self.BeamProfile_spot = w
+    
+    def beam_calc_propagation(self,length,n,w=-1,R=0):
         A = 1
         B = length*n
         C = 0 
         D = 1
         
-        self.beam_apply_ABCD(A,B,C,D)
+        if(w <= 0):
+            return self.beam_calc_ABCD(self.BeamProfile_spot,self.BeamProfile_curvature,A,B,C,D)
+        else:
+            return self.beam_calc_ABCD(w,R,A,B,C,D)
         
     def beam_apply_thinlens(self,f):
+        w, R = self.beam_calc_thinlens(f)
+
+        self.BeamProfile_curvature = R
+        self.BeamProfile_spot = w
+        
+    def beam_calc_thinlens(self,f,w=-1,R=0):
         A = 1
         B = 0
         C = -1/f 
         D = 1
         
-        self.beam_apply_ABCD(A,B,C,D)
+        if(w <= 0):
+            return self.beam_calc_ABCD(self.BeamProfile_spot,self.BeamProfile_curvature,A,B,C,D)
+        else:
+            return self.beam_calc_ABCD(w,R,A,B,C,D)
         
     def beam_apply_refraction(self,n1,n2):
+        w, R = self.beam_calc_refraction(n1,n2)
+
+        self.BeamProfile_curvature = R
+        self.BeamProfile_spot = w
+        
+    def beam_calc_refraction(self,n1,n2,w=-1,R=0):
         A = 1
         B = 0
         C = 0
         D = n1/n2
         
-        self.beam_apply_ABCD(A,B,C,D)
-        
-    def beam_apply_ABCD(self,A,B,C,D):
-        R = self.BeamProfile_curvature
-        w = self.BeamProfile_spot
-        
+        if(w <= 0):
+            return self.beam_calc_ABCD(self.BeamProfile_spot,self.BeamProfile_curvature,A,B,C,D)
+        else:
+            return self.beam_calc_ABCD(w,R,A,B,C,D)
+                
+    def beam_calc_ABCD(self,w,R,A,B,C,D):
         invQ1 = 1/R-1j*self.lambdaZero/pi/(w**2)
-        
         invQ2 = (C+D*invQ1)/(A+B*invQ1)
         
         R = 1/real(invQ2)
         w = sqrt(-1/imag(invQ2)/pi*self.lambdaZero)
         
-        self.BeamProfile_curvature = R
-        self.BeamProfile_spot = w
+        return w,R
+        
+        
         
     def calculate_autoco_helper(self,E):
         #interferometric autoco Calculation by Joao Silva

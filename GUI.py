@@ -313,7 +313,7 @@ class VFFrame(wx.Frame):
         
         
     def init_calculations(self):
-        self.propagator = propagator.Propagator(64,32.e-15,8.e-7)
+        self.propagator = propagator.Propagator(1024,256.e-15,8.e-7)
         self.propagator.example_pulseBeam()
         self.propagator.example_elements()
         

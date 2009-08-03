@@ -24,7 +24,7 @@ class Propagator:
         return self.pulseBeam
         
     def example_pulseBeam(self):
-        self.initialPulseBeam.initialize_pulse(4e-15,0,0,0,1e-6,1e10,0,1e-3,1000)
+        self.initialPulseBeam.initialize_pulse(10e-15,0,0,0,1e-4,1e10,0,1e-3,1000)
         
         self.initialPulseBeam.calculate_autoco()
         self.initialPulseBeam.calculate_FROG()
@@ -35,14 +35,12 @@ class Propagator:
 
     
     def example_elements(self):
-        self.elements.append(element_thinlens.Element_ThinLens(1,self.lambdaZero))
+        self.elements.append(element_thinlens.Element_ThinLens(1e-3,self.lambdaZero))
         self.elements.append(element_propagation.Element_Propagation(0.001,element_propagation.materials[1],self.lambdaZero))
         self.elements.append(element_thinlens.Element_ThinLens(1,self.lambdaZero))
         self.elements.append(element_propagation.Element_Propagation(0.001,element_propagation.materials[1],800e-9))
         self.elements.append(element_thinlens.Element_ThinLens(1,800e-9))
-        self.elements.append(element_propagation.Element_Propagation(0.001,element_propagation.materials[1],800e-9))
-        self.elements.append(element_propagation.Element_Propagation(0.002,element_propagation.materials[1],800e-9))
-        self.elements.append(element_propagation.Element_Propagation(0.001,element_propagation.materials[1],800e-9))
+        self.elements.append(element_propagation.Element_Propagation(0.001,element_propagation.materials[0],800e-9))
         #self.elements.append(element_propagation.Element_Propagation(0.002,element_propagation.materials[1],800e-9))
         #self.elements.append(element_propagation.Element_Propagation(0.001,element_propagation.materials[1],800e-9))
         #self.elements.append(element_propagation.Element_Propagation(0.002,element_propagation.materials[1],800e-9))
@@ -73,43 +71,62 @@ class Propagator:
     
         z0 = 0
         i = 0
-        n1 = 0
-        n2 = self.elements[0].n
+        lastn = 0
         while(z0 < z and i < len(self.elements)):
             if(z0+self.elements[i].length < z):
-               self.elements[i].calc_pulseBeam(self.elements[i].length,self.pulseBeam)
-               self.pulseBeam.beam_apply_propagation(self.elements[i].length,self.elements[i].n) #should this move into calc_pulseBeam?
-               #refraction at the interface
+                #refraction at the first material interface
+                if(self.elements[i].n != 0): #if n = 0, the element doesn't have refraction (e.g. a thin lens)
+                    if(lastn != 0 and self.elements[i].n != 0 and self.elements[i].n != lastn):
+                        self.pulseBeam.beam_apply_refraction(lastn,self.elements[i].n)    
+                        lastn = self.elements[i].n
+                
+                self.elements[i].calc_pulseBeam(self.elements[i].length,self.pulseBeam)
+                self.pulseBeam.beam_apply_propagation(self.elements[i].length,self.elements[i].n) #should this move into calc_pulseBeam?
 
-               n1 = n2
-               if(self.elements[i+1].n != 0):
-                   n2 = self.elements[i+1].n
-                   if(n1 != 0 and n2 != 0):
-                       self.pulseBeam.beam_apply_refraction(n1,n2)
-
-               z0 += self.elements[i].length
-               i += 1
+                z0 += self.elements[i].length
+                i += 1
             else:
                self.elements[i].calc_pulseBeam(z-z0,self.pulseBeam)
                self.pulseBeam.beam_apply_propagation(z-z0,self.elements[i].n)
                z0 = z
     
         self.pulseBeam.calculate_autoco()
-        self.pulseBeam.calculate_FROG()   
+        self.pulseBeam.calculate_FROG()
+
         
     def get_spots(self):
         spots = []
         
-        initialSpot = self.initialPulseBeam.BeamProfile_spot
-        initialRadius = self.initialPulseBeam.BeamProfile_curvature
-        #TODO TODO TODO
+        spot      = self.initialPulseBeam.get_beam_spot()
+        curvature = self.initialPulseBeam.get_beam_curvature()
+
+        lastn = 0 #for refraction calc
         for element in self.elements:
-            spots.append(self.initialPulseBeam.BeamProfile_spot)
-            spots.append(-0.15)
+            spots.append(spot)
+            element_name = str(element.__class__)
+            if(element_name == 'element_propagation.Element_Propagation'):
+                
+                #refraction at the first material interface
+                if(element.n != 0 and lastn != 0 and element.n != 0 and elements.n != lastn):  #if n = 0, the element doesn't have refraction (e.g. a thin lens)
+                    spot_tmp,curvature_tmp = self.initialPulseBeam.beam_apply_refraction(lastn,self.elements[i].n)    
+                    lastn = self.elements[i].n
+                    new_spot,new_curvature = self.initialPulseBeam.beam_calc_propagation(element.n, element.length,spot_tmp,curvature_tmp)
+                else:        
+                    new_spot,new_curvature = self.initialPulseBeam.beam_calc_propagation(element.n, element.length,spot,curvature)
+                    
+            elif(element_name == 'element_thinlens.Element_ThinLens'):
+                
+                new_spot,new_curvature = self.initialPulseBeam.beam_calc_thinlens(element.f,spot,curvature)                
+            else:
+                pass
+            if(new_curvature > 0 and curvature < 0):
+                spots.append(-new_spot)
+            else:
+                spots.append(new_spot)
             
-        self.initialPulseBeam.BeamProfile_spot = initialSpot
-        self.initialPulseBeam.BeamProfile_curvature  = initialRadius
-            
+            spot = new_spot
+            curvature =  new_curvature
+              
         return spots
         
         
