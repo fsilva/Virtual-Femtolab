@@ -160,7 +160,8 @@ class VFFrame(wx.Frame):
         wxglade_tmp_menu.Append(wx.NewId(), "Preferences", "", wx.ITEM_NORMAL)
         self.MainFrame_menubar.Append(wxglade_tmp_menu, "Options")
         wxglade_tmp_menu = wx.Menu()
-        wxglade_tmp_menu.Append(wx.NewId(), "Export Plots", "", wx.ITEM_NORMAL)
+        self.menu_exportplots_id = wx.NewId()
+        wxglade_tmp_menu.Append(self.menu_exportplots_id, "Export Plots", "", wx.ITEM_NORMAL)
         wxglade_tmp_menu.Append(wx.NewId(), "Export Animation", "", wx.ITEM_NORMAL)
         self.MainFrame_menubar.Append(wxglade_tmp_menu, "Export")
         wxglade_tmp_menu = wx.Menu()
@@ -190,7 +191,7 @@ class VFFrame(wx.Frame):
         #self.Bind(wx.EVT_MENU, self.menu_open_click, id=-1)
         #self.Bind(wx.EVT_MENU, self.menu_save_click, id=-1)
         self.Bind(wx.EVT_MENU, self.menu_exit_click, id=self.menu_exit)
-        #self.Bind(wx.EVT_MENU, self.menu_exportplots_click, id=-1)
+        self.Bind(wx.EVT_MENU, self.menu_exportplots_click, self.menu_exportplots_id)
         #self.Bind(wx.EVT_MENU, self.menu_animation_click, id=-1)
         self.Bind(wx.EVT_BUTTON, self.addbutton_click, self.AddButton)
         self.Bind(wx.EVT_BUTTON, self.editbutton_click, self.EditButton)
@@ -265,7 +266,9 @@ class VFFrame(wx.Frame):
         self.Close()
 
     def menu_exportplots_click(self, event): # wxGlade: VFFrame.<event_handler>
-        print "Event handler `menu_exportplots_click' not implemented!"
+        dialog = wx.FileDialog(self,'Choose image file to save plots','./','plots.png','PNG file (*.png)|*.png',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR)
+        result = dialog.Show()
+        print result
         event.Skip()
 
     def menu_animation_click(self, event): # wxGlade: VFFrame.<event_handler>
