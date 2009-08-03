@@ -16,6 +16,13 @@ class Propagator:
         self.lambdaZero = lambdaZero
         
         self.elements = []
+        self.current_z = 0
+    
+    def change_computational_window(self,NT,deltaT):
+        self.initialPulseBeam.change_window(NT,deltaT)
+        del self.pulseBeam
+        self.pulseBeam = pulseBeam.pulseBeam(NT,deltaT,self.lambdaZero)
+        self.change_z(self.current_z)
         
     def get_initialPulseBeam(self):
         return self.initialPulseBeam
@@ -68,6 +75,7 @@ class Propagator:
             return
         
         self.pulseBeam.copy(self.initialPulseBeam)
+        self.current_z = z
     
         z0 = 0
         i = 0

@@ -89,6 +89,34 @@ class pulseBeam:
         #self.FFT[:self.NT/4]   = sqrt(self.Spectrum[self.NT/4:])
         self.ElectricField[:] = ifft(self.FFT)
         
+    def change_window(self, NT, deltaT):
+        if(self.initialTemporalFWHM != 0):
+            #save data
+            tmp_timeFWHM = self.initialTemporalFWHM
+            tmp_GVD = self.initialGVD
+            tmp_TOD = self.initialTOD
+            tmp_FOD = self.initialFOD
+            tmp_spot = self.BeamProfile_spot
+            tmp_curvature = self.BeamProfile_curvature
+            tmp_peak_power = self.peak_power
+            tmp_energy = self.energy
+            tmp_rate = self.rate
+            self.__init__(NT,deltaT,self.lambdaZero)
+            self.initialize_pulse(tmp_timeFWHM , tmp_GVD , tmp_TOD , tmp_FOD , tmp_spot, tmp_curvature, tmp_peak_power , tmp_energy , tmp_rate)
+        else:
+            tmp_spectralFWHM = self.initialSpectralFWHM
+            tmp_GVD = self.initialGVD
+            tmp_TOD = self.initialTOD
+            tmp_FOD = self.initialFOD
+            tmp_spot = self.BeamProfile_spot
+            tmp_curvature = self.BeamProfile_curvature
+            tmp_peak_power = self.peak_power
+            tmp_energy = self.energy
+            tmp_rate = self.rate
+            self.__init__(NT,deltaT,self.lambdaZero)
+            self.initialize_spectrum(tmp_spectralFWHM , tmp_GVD , tmp_TOD , tmp_FOD , tmp_spot, tmp_curvature, tmp_peak_power , tmp_energy , tmp_rate)
+            
+        
         
     def initialize_pulse(self, timeFWHM, GVD,TOD,FOD, spot, curvature, peak_power, energy, rate):
         self.BeamProfile_spot = spot

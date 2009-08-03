@@ -29,7 +29,10 @@ class FourPlots(wx.Panel):
         sizer.Add(self.canvas,1,wx.EXPAND)
         sizer.Add(self.toolbar, 0 , wx.LEFT | wx.EXPAND)
         self.SetSizer(sizer)
-
+        
+        self.create_plots()
+    
+    def create_plots(self):
         # create the four plots
         self.plot1 = self.figure.add_subplot(221)
         self.axes1 = self.figure.gca()
@@ -58,11 +61,12 @@ class FourPlots(wx.Panel):
             self.plot1_twinx = self.plot1.twinx()
             self.plot1_line3, = self.plot1_twinx.plot(t_phase, temporal_phase, 'k')
             
-            max_phase = max(temporal_phase)
-            min_phase = min(temporal_phase)
-            delta = max_phase-min_phase
-            if(delta < 0.1):
-                self.plot1_twinx.set_ylim((-0.09,0.01))
+            if(len(temporal_phase) > 0):
+                max_phase = max(temporal_phase)
+                min_phase = min(temporal_phase)
+                delta = max_phase-min_phase
+                if(delta < 0.1):
+                    self.plot1_twinx.set_ylim((-0.09,0.01))
             
             #spectral profile
             self.plot2_line1, = self.plot2.plot(freq, spectrum, 'g')
@@ -120,6 +124,13 @@ class FourPlots(wx.Panel):
             
         self.figure.canvas.draw()
         
+    def reset(self):
+        self.plot_init = False
+        
+        self.figure.clf()
+        
+        self.create_plots()
+        
 
 
 
@@ -140,10 +151,14 @@ class VFFrame(wx.Frame):
         wxglade_tmp_menu.Append(wx.NewId(), "Open", "", wx.ITEM_NORMAL)
         wxglade_tmp_menu.Append(wx.NewId(), "Save", "", wx.ITEM_NORMAL)
         wxglade_tmp_menu.AppendSeparator()
-        wxglade_tmp_menu.Append(wx.NewId(), "Exit", "", wx.ITEM_NORMAL)
+        self.menu_exit = wx.NewId()
+        wxglade_tmp_menu.Append(self.menu_exit, "Exit", "", wx.ITEM_NORMAL)
         self.MainFrame_menubar.Append(wxglade_tmp_menu, "File")
         wxglade_tmp_menu = wx.Menu()
-        self.MainFrame_menubar.Append(wxglade_tmp_menu, "Preferences")
+        self.menu_compwindow_id = wx.NewId()
+        wxglade_tmp_menu.Append(self.menu_compwindow_id, "Computational Window", "", wx.ITEM_NORMAL)
+        wxglade_tmp_menu.Append(wx.NewId(), "Preferences", "", wx.ITEM_NORMAL)
+        self.MainFrame_menubar.Append(wxglade_tmp_menu, "Options")
         wxglade_tmp_menu = wx.Menu()
         wxglade_tmp_menu.Append(wx.NewId(), "Export Plots", "", wx.ITEM_NORMAL)
         wxglade_tmp_menu.Append(wx.NewId(), "Export Animation", "", wx.ITEM_NORMAL)
@@ -169,12 +184,14 @@ class VFFrame(wx.Frame):
         self.init_grid_information()
 
         self.__do_layout()
+        
+        self.Bind(wx.EVT_MENU, self.menu_computational_window_click, id=self.menu_compwindow_id)
 
-        self.Bind(wx.EVT_MENU, self.menu_open_click, id=-1)
-        self.Bind(wx.EVT_MENU, self.menu_save_click, id=-1)
-        self.Bind(wx.EVT_MENU, self.menu_exit_click, id=-1)
-        self.Bind(wx.EVT_MENU, self.menu_exportplots_click, id=-1)
-        self.Bind(wx.EVT_MENU, self.menu_animation_click, id=-1)
+        #self.Bind(wx.EVT_MENU, self.menu_open_click, id=-1)
+        #self.Bind(wx.EVT_MENU, self.menu_save_click, id=-1)
+        self.Bind(wx.EVT_MENU, self.menu_exit_click, id=self.menu_exit)
+        #self.Bind(wx.EVT_MENU, self.menu_exportplots_click, id=-1)
+        #self.Bind(wx.EVT_MENU, self.menu_animation_click, id=-1)
         self.Bind(wx.EVT_BUTTON, self.addbutton_click, self.AddButton)
         self.Bind(wx.EVT_BUTTON, self.editbutton_click, self.EditButton)
         self.Bind(wx.EVT_BUTTON, self.removebutton_click, self.RemoveButton)
@@ -254,6 +271,13 @@ class VFFrame(wx.Frame):
     def menu_animation_click(self, event): # wxGlade: VFFrame.<event_handler>
         print "Event handler `menu_animation_click' not implemented!"
         event.Skip()
+        
+    def menu_computational_window_click(self, event):
+        import edit_computationalwindow
+        dialog = edit_computationalwindow.EditComputationalWindow(self)
+        dialog.set_info(self.NT,self.deltaT,self.change_computational_window,self.refresh_everything)
+        dialog.Show()
+        event.Skip()
 
     def addbutton_click(self, event): # wxGlade: VFFrame.<event_handler>
         event.Skip()
@@ -313,7 +337,11 @@ class VFFrame(wx.Frame):
         
         
     def init_calculations(self):
-        self.propagator = propagator.Propagator(1024,256.e-15,8.e-7)
+        #TODO: move this into a separate config file
+        self.NT = 1024
+        self.deltaT = 64.e-15
+        self.lambdaZero = 8.0e-7
+        self.propagator = propagator.Propagator(self.NT,self.deltaT,self.lambdaZero)
         self.propagator.example_pulseBeam()
         self.propagator.example_elements()
         
@@ -403,7 +431,12 @@ class VFFrame(wx.Frame):
         self.VFData.SetCellValue(12,2,'m')
 
         
+    def change_computational_window(self, NT, deltaT):
+        self.NT = NT
+        self.deltaT = deltaT
         
+        self.propagator.change_computational_window(NT, deltaT) 
+        self.plot.reset()
         
         
         
