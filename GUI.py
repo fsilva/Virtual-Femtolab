@@ -7,6 +7,7 @@ wxversion.ensureMinimal('2.8')
 import wx
 import wx.grid
 import wx.lib.scrolledpanel
+import sys
     
 import matplotlib as mpl
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
@@ -162,7 +163,6 @@ class VFFrame(wx.Frame):
         wxglade_tmp_menu = wx.Menu()
         self.menu_exportplots_id = wx.NewId()
         wxglade_tmp_menu.Append(self.menu_exportplots_id, "Export Plots", "", wx.ITEM_NORMAL)
-        wxglade_tmp_menu.Append(wx.NewId(), "Export Animation", "", wx.ITEM_NORMAL)
         self.MainFrame_menubar.Append(wxglade_tmp_menu, "Export")
         wxglade_tmp_menu = wx.Menu()
         self.MainFrame_menubar.Append(wxglade_tmp_menu, "About")
@@ -191,7 +191,7 @@ class VFFrame(wx.Frame):
         #self.Bind(wx.EVT_MENU, self.menu_open_click, id=-1)
         #self.Bind(wx.EVT_MENU, self.menu_save_click, id=-1)
         self.Bind(wx.EVT_MENU, self.menu_exit_click, id=self.menu_exit)
-        self.Bind(wx.EVT_MENU, self.menu_exportplots_click, id=self.menu_exportplots_id)
+        self.Bind(wx.EVT_MENU, self.menu_export_click, id=self.menu_exportplots_id)
         #self.Bind(wx.EVT_MENU, self.menu_animation_click, id=-1)
         self.Bind(wx.EVT_BUTTON, self.addbutton_click, self.AddButton)
         self.Bind(wx.EVT_BUTTON, self.editbutton_click, self.EditButton)
@@ -265,19 +265,13 @@ class VFFrame(wx.Frame):
     def menu_exit_click(self, event): # wxGlade: VFFrame.<event_handler>
         self.Close()
 
-    def menu_exportplots_click(self, event): # wxGlade: VFFrame.<event_handler>
-        dialog = wx.FileDialog(self,'Choose image file to save plots','./','plots.png','PNG file (*.png)|*.png',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR)
-        if(dialog.ShowModal() == wx.ID_OK):
-            filename = dialog.GetFilename()
-#            self.export_frame_all_elements(filename)
-            self.export_frame_field_and_spectrum(filename)
-        dialog.Destroy()
-        event.Skip()
-
-    def menu_animation_click(self, event): # wxGlade: VFFrame.<event_handler>
-        print "Event handler `menu_animation_click' not implemented!"
-        event.Skip()
+    def menu_export_click(self, event): # wxGlade: VFFrame.<event_handler>
+        import export_dialog
+        dialog = export_dialog.ExportFrame(self)
+        dialog.set_info(self.export)
+        dialog.Show()
         
+
     def menu_computational_window_click(self, event):
         import edit_computationalwindow
         dialog = edit_computationalwindow.EditComputationalWindow(self)
@@ -572,7 +566,65 @@ class VFFrame(wx.Frame):
             z += elements[i].length
             x += width+5
             
+
+    def export(self,export_type, export_elements, numframes):
+        if(export_elements == 1 and sys.platform=='darwin'):
+            string = 'Please do not occlude the window during the process. Doing so will result in incorrect output.'
+            dialog = wx.MessageDialog(self,string,'Important',wx.OK|wx.ICON_INFORMATION)
+            dialog.ShowModal()
+            del dialog
+        
+        if(export_type == 0): #export single frame
+            dialog = wx.FileDialog(self,'Choose image file to save plots','./','plots.png','PNG file (*.png)|*.png',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR)
+            if(dialog.ShowModal() == wx.ID_OK):
+                filename = dialog.GetFilename()
+                if(export_elements == 1): #everything
+                    self.export_frame_all_elements(filename)
+                else:
+                    self.export_frame_field_and_spectrum(filename)
+            dialog.Destroy()
+        else:  #export animation
+            dialog = wx.DirDialog(self,'Choose directory to save plot sequence','./',wx.DD_DIR_MUST_EXIST|wx.DD_CHANGE_DIR)
+            if(dialog.ShowModal() == wx.ID_OK):
+                path = dialog.GetPath()
+                self.export_animation(path,numframes,export_elements)
+                f=file(path+'/make_mpeg2.bat','w')
+                f.write('mencoder -ovc lavc -lavcopts vcodec=mpeg2video:vbitrate=1500  -mf type=png:fps=5 -nosound -of mpeg -o output.mpg mf://*.png\n')
+                f.write('./mencoder -ovc lavc -lavcopts vcodec=mpeg2video:vbitrate=1500  -mf type=png:fps=5 -nosound -of mpeg -o output.mpg mf://*.png')
+                f.close()
+                f=file(path+'/make_gif.bat','w')
+                f.write('convert *.png  -delay 20 animation.gif')
+                f.close()
+                f=file(path+'/make_README.txt','w')
+                f.write('You need imagemagick for make_gif.bat and mencoder for make_mpeg2.bat. In Linux or MacOSX, run with \'bash make_XXX.bat\'. Videos do not open in Quicktime' )
+                f.close()
+            dialog.Destroy()
             
+    def export_animation(self,path,numframes,export_elements):
+        import progress_dialog
+        dialog = progress_dialog.ProgressFrame(self)
+        dialog.Show()
+        
+        max_distance = self.propagator.get_max_z()
+        
+        dialog.set_frame(1,numframes)
+                
+        for i in xrange(numframes):
+            filename = path+'/%0.6d.png'%(i+1)
+
+            
+            z = i*max_distance/(numframes-1)
+
+            self.change_distance(z)
+            
+            dialog.set_frame(i+1,numframes)
+            
+            if(export_elements==0): #just electric field
+                self.export_frame_field_and_spectrum(filename)
+            else:
+                self.export_frame_all_elements(filename)
+            
+        dialog.Destroy()
             
     def export_frame_field_and_spectrum(self,filename):
         #draw plots to buffer 2
@@ -686,7 +738,8 @@ class VFFrame(wx.Frame):
         final_image.paste(img2,(0,0))
         final_image.paste(img3,(img2.size[0],0))
         final_image.paste(img1,(0,img2.size[1]))
-        final_image.show()
+        #final_image.show()
+        final_image.save(filename)
         #img1.show()
         #img2.show()
         #img3.show()
