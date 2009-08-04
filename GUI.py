@@ -191,7 +191,7 @@ class VFFrame(wx.Frame):
         #self.Bind(wx.EVT_MENU, self.menu_open_click, id=-1)
         #self.Bind(wx.EVT_MENU, self.menu_save_click, id=-1)
         self.Bind(wx.EVT_MENU, self.menu_exit_click, id=self.menu_exit)
-        self.Bind(wx.EVT_MENU, self.menu_exportplots_click, self.menu_exportplots_id)
+        self.Bind(wx.EVT_MENU, self.menu_exportplots_click, id=self.menu_exportplots_id)
         #self.Bind(wx.EVT_MENU, self.menu_animation_click, id=-1)
         self.Bind(wx.EVT_BUTTON, self.addbutton_click, self.AddButton)
         self.Bind(wx.EVT_BUTTON, self.editbutton_click, self.EditButton)
@@ -267,8 +267,11 @@ class VFFrame(wx.Frame):
 
     def menu_exportplots_click(self, event): # wxGlade: VFFrame.<event_handler>
         dialog = wx.FileDialog(self,'Choose image file to save plots','./','plots.png','PNG file (*.png)|*.png',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR)
-        result = dialog.Show()
-        print result
+        if(dialog.ShowModal() == wx.ID_OK):
+            filename = dialog.GetFilename()
+#            self.export_frame_all_elements(filename)
+            self.export_frame_field_and_spectrum(filename)
+        dialog.Destroy()
         event.Skip()
 
     def menu_animation_click(self, event): # wxGlade: VFFrame.<event_handler>
@@ -502,15 +505,24 @@ class VFFrame(wx.Frame):
         
     def paint_event(self,event):
         dc = wx.BufferedPaintDC(self.SchematicPanel, self.buffer)
+#        dc = wx.PaintDC(self.SchematicPanel)
+#        self.repaint_schematic()
     
         
     def repaint_schematic(self):
         dc = wx.BufferedPaintDC(self.SchematicPanel, self.buffer)
+#        dc = wx.PaintDC(self.SchematicPanel)
         #dc.SetBackground(wx.Brush(self.GetBackgroundColour()))
         dc.SetBackground(wx.Brush('#efefef'))
         dc.BeginDrawing()
         dc.Clear()
 
+        self.draw_schematic(dc)
+
+        #event.Skip()
+        dc.EndDrawing()
+        
+    def draw_schematic(self,dc):
         width = 120
         height = 100   
         
@@ -559,13 +571,125 @@ class VFFrame(wx.Frame):
             
             z += elements[i].length
             x += width+5
+            
+            
+            
+    def export_frame_field_and_spectrum(self,filename):
+        #draw plots to buffer 2
+        import StringIO, Image
+        imgdata = StringIO.StringIO()
+        self.plot.figure.savefig(imgdata, dpi=120,format='png')
+        imgdata.seek(0)
+        img = Image.open(imgdata)
 
-        #event.Skip()
-        dc.EndDrawing()
+        #import matplotlib nonGUI backend and use that
+        from matplotlib.backends.backend_agg import FigureCanvasAgg as PngCanvas
+        figure = mpl.figure.Figure(dpi=150, figsize=(16,6))
+        canvas = PngCanvas(figure)
+        figure.subplots_adjust(hspace = 0.33,wspace=0.33)
+        plot1 = figure.add_subplot(121,title='Temporal Profile')
+        plot2 = figure.add_subplot(122,title='Spectral Profile')
         
-
-
-
+        #drawing code 
+            
+        pulseBeam = self.propagator.get_pulseBeam()
+        t_envelope = pulseBeam.get_t()
+        envelope = pulseBeam.get_temporal_envelope()
+        electric_field = pulseBeam.get_real_electric_field()
+        t_phase = t_envelope[:]
+        temporal_phase = pulseBeam.get_temporal_phase()
+        t_phase,temporal_phase = pulseBeam.phase_blank(t_phase,envelope,temporal_phase,1e-2)
+        freq = pulseBeam.get_frequencies()
+        spectrum = pulseBeam.get_spectral_intensity()
+        freq_phase = freq[:]
+        spectral_phase = pulseBeam.get_spectral_phase()
+        freq_phase,spectral_phase = pulseBeam.phase_blank(freq_phase,spectrum,spectral_phase,1e-2)
+        
+        #efield
+        plot1.plot(t_envelope, envelope, 'r')
+        if(not electric_field is None):
+            plot1.plot(t_envelope, electric_field, 'b')
+        plot1_twinx = plot1.twinx()
+        plot1_twinx.plot(t_phase, temporal_phase, 'k')
+        
+        if(len(temporal_phase) > 0):
+            max_phase = max(temporal_phase)
+            min_phase = min(temporal_phase)
+            delta = max_phase-min_phase
+            if(delta < 0.1):
+                plot1_twinx.set_ylim((-0.09,0.01))
+        
+        #spectral profile
+        plot2.plot(freq, spectrum, 'g')
+        plot2_twinx = plot2.twinx()
+        plot2_twinx.plot(freq_phase, spectral_phase, 'k')
+        
+        figure.savefig(filename,format='png')
+        del canvas
+        del figure
+        
+        
+    def export_frame_all_elements(self,filename):
+        #draw schematic to buffer 1
+        memorydc = wx.MemoryDC()
+        size = self.SchematicPanel.GetSize()
+        bitmap1 = wx.EmptyBitmap(size[0],size[1])
+        memorydc.SelectObject(bitmap1)
+        memorydc.SetBackground(wx.Brush('white'))
+        memorydc.Clear()
+        self.draw_schematic(memorydc)
+        memorydc.SelectObject(wx.NullBitmap)
+        memorydc.Destroy()
+        #bitmap1.SaveFile(filename,wx.BITMAP_TYPE_PNG)
+        import Image
+        wximg = wx.ImageFromBitmap(bitmap1)
+        img1 = Image.new('RGB', (wximg.GetWidth(), wximg.GetHeight()))
+        img1.fromstring(wximg.GetData())
+        
+        #draw plots to buffer 2
+        import StringIO
+        imgdata = StringIO.StringIO()
+        self.plot.figure.savefig(imgdata, dpi=75,format='png')
+        imgdata.seek(0)
+        img2 = Image.open(imgdata)
+        
+        #import VFData to buffer 3   #TODO: do this in a much reliable way!
+        import sys
+        if(sys.platform == 'darwin'): #workaround for macosx
+            import os
+            os.system('screencapture -x __tmp1.png')
+            tmpimg = Image.open('__tmp1.png')
+            os.system('rm __tmp1.png')
+#            pos = self.GetRect()
+            x,y = self.ClientToScreen((0,0))
+            rect = self.VFData.GetRect()
+#            img3 = tmpimg.crop((rect.x+pos.x,rect.y+pos.y+border.height,rect.x+pos.x+rect.width,rect.y+pos.y+rect.height+border.height))
+            img3 = tmpimg.crop((rect.x+x,rect.y+y,rect.x+x+rect.width,rect.y+y+rect.height))
+        else:
+            rect = self.VFData.GetRect()
+            dc = wx.ClientDC(self.VFData)
+            bmp = wx.EmptyBitmap(rect.width, rect.height)
+            memDC = wx.MemoryDC()
+            memDC.SelectObject(bmp)
+            memDC.Blit( 0, 0, rect.width,rect.height, dc,0,0)      
+            memDC.SelectObject(wx.NullBitmap)
+            import Image
+            wximg = wx.ImageFromBitmap(bmp)
+            img3 = Image.new('RGB', (wximg.GetWidth(), wximg.GetHeight()))
+            img3.fromstring(wximg.GetData())
+        
+        width = img1.size[0]
+        if(width < img2.size[0]+img3.size[0]):
+            width = img2.size[0]+img3.size[0]
+        height = img1.size[1]+img2.size[1]
+        final_image = Image.new('RGB', (width, height),'white')
+        final_image.paste(img2,(0,0))
+        final_image.paste(img3,(img2.size[0],0))
+        final_image.paste(img1,(0,img2.size[1]))
+        final_image.show()
+        #img1.show()
+        #img2.show()
+        #img3.show()
 # end of class VFFrame
 
 def main():
