@@ -178,10 +178,13 @@ class VFFrame(wx.Frame):
         self.AddButton = wx.Button(self, wx.ID_ADD, "")
         self.EditButton = wx.Button(self, wx.ID_PROPERTIES, "")
         self.RemoveButton = wx.Button(self, wx.ID_REMOVE, "")
+        self.findwaist_id = wx.NewId()
+        self.FindWaistButton = wx.Button(self, self.findwaist_id, "Find Next Waist")
         self.VFData = wx.grid.Grid(self)#, -1,  size=(255,400))
         self.SchematicPanel = wx.Panel(self, -1)
         self.DistanceSlider = wx.Slider(self, -1, 0, 0, 1000)
-
+        self.DistanceText = wx.TextCtrl(self, -1, "0", style=wx.TE_RIGHT|wx.TE_PROCESS_ENTER)
+        
         # Add Matplotlib widgets to window
         self.plot = FourPlots(self)
 
@@ -202,7 +205,10 @@ class VFFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.addbutton_click, self.AddButton)
         self.Bind(wx.EVT_BUTTON, self.editbutton_click, self.EditButton)
         self.Bind(wx.EVT_BUTTON, self.removebutton_click, self.RemoveButton)
+        self.Bind(wx.EVT_BUTTON, self.findwaist_click, self.FindWaistButton)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.distanceslider_change, self.DistanceSlider)
+        
+        self.Bind(wx.EVT_TEXT_ENTER, self.edit_distance_change)
         
         #self.SchematicPanel.Bind(wx.EVT_PAINT, self.repaint_schematic) 
         self.Bind(wx.EVT_PAINT, self.paint_event) 
@@ -248,12 +254,16 @@ class VFFrame(wx.Frame):
         self.sizer_8.Add(self.AddButton, 0, wx.ALL|wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 5)
         self.sizer_8.Add(self.EditButton, 0, wx.ALL|wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 5)
         self.sizer_8.Add(self.RemoveButton, 0, wx.ALL|wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 5)
+        self.sizer_8.Add(self.FindWaistButton, 0, wx.ALL|wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 5)
         self.sizer_7.Add(self.sizer_8,0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
         self.sizer_6.Add(self.sizer_7, 3, wx.EXPAND, 0)
         self.sizer_6.Add(self.VFData,0,wx.EXPAND,0)
         self.sizer_2.Add(self.sizer_6, 1, wx.EXPAND, 0)
         self.sizer_9.Add(self.SchematicPanel, 5, wx.EXPAND, 0)
-        self.sizer_9.Add(self.DistanceSlider, 1, wx.EXPAND, 0)
+        self.sizer_10 = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer_10.Add(self.DistanceSlider, 5, wx.ALL|wx.EXPAND, 5)
+        self.sizer_10.Add(self.DistanceText, 1, wx.ALL|wx.EXPAND, 5)
+        self.sizer_9.Add(self.sizer_10, 1, wx.EXPAND, 0)
         self.sizer_2.Add(self.sizer_9, 0, wx.EXPAND, 0)
         self.sizer_1.Add(self.sizer_2, 1, wx.EXPAND, 0)
         self.SetSizer(self.sizer_1)
@@ -298,6 +308,7 @@ class VFFrame(wx.Frame):
         dialog.Show()
         
     def menu_exportdata_click(self, event): # wxGlade: VFFrame.<event_handler>
+        event.Skip()
         dialog = wx.FileDialog(self,'Choose file prefix to save data','./','data','No extension. Data will be saved in various csv files.|*.',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR)
         if(dialog.ShowModal() == wx.ID_OK):
             filename = dialog.GetFilename()
@@ -305,11 +316,12 @@ class VFFrame(wx.Frame):
         dialog.Destroy()
         
     def menu_computational_window_click(self, event):
+        event.Skip()
         import edit_computationalwindow
         dialog = edit_computationalwindow.EditComputationalWindow(self)
         dialog.set_info(self.NT,self.deltaT,self.change_computational_window,self.refresh_everything)
         dialog.Show()
-        event.Skip()
+        
 
     def addbutton_click(self, event): # wxGlade: VFFrame.<event_handler>
         event.Skip()
@@ -343,8 +355,8 @@ class VFFrame(wx.Frame):
         event.Skip()
 
     def removebutton_click(self, event): # wxGlade: VFFrame.<event_handler>
+        event.Skip()
         if(self.selected == 0 or self.selected > len(self.propagator.get_elements())):
-            event.Skip()
             return
             
         element = self.propagator.get_elements()[self.selected-1]
@@ -355,8 +367,19 @@ class VFFrame(wx.Frame):
             self.selected = 0
             self.refresh_everything()
         
-        event.Skip()
         
+        
+    def findwaist_click(self, event):
+        event.Skip()
+        z = self.propagator.get_next_waist()
+        if(z < 0): #not found
+            dialog = wx.MessageDialog(None, 'No more waists found.', 'Information', wx.OK|wx.ICON_INFORMATION)
+            dialog.ShowModal()
+            del dialog
+        else:
+            self.change_distance(z)
+            self.DistanceSlider.SetValue(z*1000/self.propagator.get_max_z())
+            
         
 
     def distanceslider_change(self, event): # wxGlade: VFFrame.<event_handler>
@@ -365,6 +388,14 @@ class VFFrame(wx.Frame):
             self.change_distance(distance)
 
         event.Skip()
+        
+    def edit_distance_change(self,event):
+        event.Skip()
+        try:
+            z = float(self.DistanceText.GetValue())
+            self.change_distance(z)
+        except:
+            self.DistanceText.ChangeValue(str(self.distance))
         
         
         
@@ -397,6 +428,7 @@ class VFFrame(wx.Frame):
         self.propagator.change_z(distance)
     
         # Refresh interface/redraw
+        self.DistanceText.ChangeValue(str(self.distance))
         self.refresh_interface()
         self.refresh_grid_information()
         self.repaint_schematic()

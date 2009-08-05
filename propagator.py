@@ -171,4 +171,50 @@ class Propagator:
     def recreate_frogs(self):
         self.initialPulseBeam.recreate_frog()
         self.pulseBeam.recreate_frog()
+        
+    def get_next_waist(self):
+        z = 0
+        spot      = self.initialPulseBeam.get_beam_spot()
+        curvature = self.initialPulseBeam.get_beam_curvature()
+        
+        spot_tmp = 0
+        curvature_tmp = 0
+
+        lastn = 0 #for refraction calc
+        for element in self.elements:
             
+            element_name = str(element.__class__)
+            if(element_name == 'element_propagation.Element_Propagation'):
+                
+                #refraction at the first material interface
+                if(element.n != 0 and lastn != 0 and element.n != 0 and elements.n != lastn):  #if n = 0, the element doesn't have refraction (e.g. a thin lens)
+                    spot_tmp,curvature_tmp = self.initialPulseBeam.beam_apply_refraction(lastn,self.elements[i].n)    
+                    lastn = self.elements[i].n
+                    new_spot,new_curvature = self.initialPulseBeam.beam_calc_propagation(element.n, element.length,spot_tmp,curvature_tmp)
+                else:        
+                    new_spot,new_curvature = self.initialPulseBeam.beam_calc_propagation(element.n, element.length,spot,curvature)
+                    
+            elif(element_name == 'element_thinlens.Element_ThinLens'):
+                
+                new_spot,new_curvature = self.initialPulseBeam.beam_calc_thinlens(element.f,spot,curvature)                
+            else:
+                pass
+            if(new_curvature > 0 and curvature < 0):
+                #this is the spot!
+                #calculate waist position
+                if(spot_tmp > 0): #we had refraction at the first interface
+                    waist_z = z-curvature_tmp/(1+(self.pulseBeam.lambdaZero*curvature_tmp/3.1415/spot_tmp**2)**2)/element.n
+                else:
+                    waist_z = z-curvature/(1+(self.pulseBeam.lambdaZero*curvature/3.1415/spot**2)**2)/element.n
+                print waist_z
+                #return if forward
+                if(waist_z > self.current_z):
+                    return waist_z
+                
+            z += element.length
+            
+            spot = new_spot
+            curvature =  new_curvature
+            spot_tmp = 0
+            
+        return -1 #no spot found, return < 0
