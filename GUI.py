@@ -8,6 +8,7 @@ import wx
 import wx.grid
 import wx.lib.scrolledpanel
 import sys
+import pickle
     
 import matplotlib as mpl
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
@@ -150,8 +151,10 @@ class VFFrame(wx.Frame):
         # Menu Bar
         self.MainFrame_menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
-        wxglade_tmp_menu.Append(wx.NewId(), "Open", "", wx.ITEM_NORMAL)
-        wxglade_tmp_menu.Append(wx.NewId(), "Save", "", wx.ITEM_NORMAL)
+        self.menu_load_id = wx.NewId()
+        wxglade_tmp_menu.Append(self.menu_load_id, "Open", "", wx.ITEM_NORMAL)
+        self.menu_save_id = wx.NewId()
+        wxglade_tmp_menu.Append(self.menu_save_id, "Save", "", wx.ITEM_NORMAL)
         wxglade_tmp_menu.AppendSeparator()
         self.menu_exit = wx.NewId()
         wxglade_tmp_menu.Append(self.menu_exit, "Exit", "", wx.ITEM_NORMAL)
@@ -191,12 +194,11 @@ class VFFrame(wx.Frame):
         
         self.Bind(wx.EVT_MENU, self.menu_computational_window_click, id=self.menu_compwindow_id)
 
-        #self.Bind(wx.EVT_MENU, self.menu_open_click, id=-1)
-        #self.Bind(wx.EVT_MENU, self.menu_save_click, id=-1)
+        self.Bind(wx.EVT_MENU, self.menu_open_click, id=self.menu_load_id)
+        self.Bind(wx.EVT_MENU, self.menu_save_click, id=self.menu_save_id)
         self.Bind(wx.EVT_MENU, self.menu_exit_click, id=self.menu_exit)
         self.Bind(wx.EVT_MENU, self.menu_exportplots_click, id=self.menu_exportplots_id)
         self.Bind(wx.EVT_MENU, self.menu_exportdata_click, id=self.menu_exportdata_id)
-        #self.Bind(wx.EVT_MENU, self.menu_animation_click, id=-1)
         self.Bind(wx.EVT_BUTTON, self.addbutton_click, self.AddButton)
         self.Bind(wx.EVT_BUTTON, self.editbutton_click, self.EditButton)
         self.Bind(wx.EVT_BUTTON, self.removebutton_click, self.RemoveButton)
@@ -259,12 +261,32 @@ class VFFrame(wx.Frame):
         # end wxGlade
 
     def menu_open_click(self, event): # wxGlade: VFFrame.<event_handler>
-        print "Event handler `menu_open_click' not implemented!"
         event.Skip()
+        dialog = wx.FileDialog(self,'Choose file to load state','./','state','Virtual Femtolab Setup(*.fs)|*.fs| All Files (*.*)|*.*',wx.FD_CHANGE_DIR)
+        if(dialog.ShowModal() == wx.ID_OK):
+            filename = dialog.GetFilename()
+            infile = open(filename, 'rb')
+            self.propagator = pickle.load(infile)
+            infile.close()
+            self.propagator.recreate_frogs()
+            self.propagator.change_z(self.distance)
+            self.refresh_everything()
+        dialog.Destroy()
+        
 
     def menu_save_click(self, event): # wxGlade: VFFrame.<event_handler>
-        print "Event handler `menu_save_click' not implemented!"
         event.Skip()
+        dialog = wx.FileDialog(self,'Choose file to save current state','./','state','Virtual Femtolab Setup|*.fs',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR)
+        if(dialog.ShowModal() == wx.ID_OK):
+            filename = dialog.GetFilename()
+            if(filename[-3:] != '.fs'):
+                filename = filename + '.fs'
+            outfile = open(filename, 'wb')
+            self.propagator.delete_frogs_for_output()
+            pickle.dump(self.propagator, outfile)
+            outfile.close()
+            self.propagator.recreate_frogs()
+        dialog.Destroy()
 
     def menu_exit_click(self, event): # wxGlade: VFFrame.<event_handler>
         self.Close()

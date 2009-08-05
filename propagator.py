@@ -162,4 +162,13 @@ class Propagator:
             return 
         
         del self.elements[selected] 
+        
+    def delete_frogs_for_output(self):
+        #delete frog data in pulsebeams so that each output file is much smaller
+        self.initialPulseBeam.delete_frog()
+        self.pulseBeam.delete_frog() 
+        
+    def recreate_frogs(self):
+        self.initialPulseBeam.recreate_frog()
+        self.pulseBeam.recreate_frog()
             

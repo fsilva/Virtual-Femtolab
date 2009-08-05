@@ -521,6 +521,12 @@ class pulseBeam:
     def get_SHGFROG(self):
         frog_limits = self.FROGxmin,self.FROGxmax,self.FROGymin,self.FROGymax
         return self.FROG,frog_limits
+    
+    def delete_frog(self):
+        del self.FROG
+        
+    def recreate_frog(self):
+        self.FROG = zeros((self.NT,self.NT))
         
     def phase_blank(self,t,data_array,phase_array,threshold): #TODO: speed this up, perhaps
         absarray = abs(data_array)
