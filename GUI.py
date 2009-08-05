@@ -184,6 +184,7 @@ class VFFrame(wx.Frame):
         self.SchematicPanel = wx.Panel(self, -1)
         self.DistanceSlider = wx.Slider(self, -1, 0, 0, 1000)
         self.DistanceText = wx.TextCtrl(self, -1, "0", style=wx.TE_RIGHT|wx.TE_PROCESS_ENTER)
+        self.DistanceLabel = wx.StaticText(self, -1, 'm')
         
         # Add Matplotlib widgets to window
         self.plot = FourPlots(self)
@@ -263,6 +264,7 @@ class VFFrame(wx.Frame):
         self.sizer_10 = wx.BoxSizer(wx.HORIZONTAL)
         self.sizer_10.Add(self.DistanceSlider, 5, wx.ALL|wx.EXPAND, 5)
         self.sizer_10.Add(self.DistanceText, 1, wx.ALL|wx.EXPAND, 5)
+        self.sizer_10.Add(self.DistanceLabel, 0, wx.ALL|wx.EXPAND, 5)
         self.sizer_9.Add(self.sizer_10, 1, wx.EXPAND, 0)
         self.sizer_2.Add(self.sizer_9, 0, wx.EXPAND, 0)
         self.sizer_1.Add(self.sizer_2, 1, wx.EXPAND, 0)
@@ -825,11 +827,17 @@ class VFFrame(wx.Frame):
         
         #export spectral data
         freq = pulseBeam.get_frequencies()
+        wavelengths = pulseBeam.get_wavelengths()
         spectrum = pulseBeam.get_spectral_intensity()
         spectral_phase = pulseBeam.get_spectral_phase()
-        table = vstack((freq,spectrum))
-        string = 'envelope frequency, spectrum, spectral phase'
-        table = vstack((table,spectral_phase))
+        #dont output negative or very high wavelengths
+        i = 0
+        while(wavelengths[i] <= 0 or wavelengths[i] > 1600e-9):
+            i+=1
+        table = vstack((freq[i:],wavelengths[i:]))
+        table = vstack((table,spectrum[i:]))
+        table = vstack((table,spectral_phase[i:]))
+        string = 'envelope frequency, wavelength, spectrum, spectral phase'
         csv_utils.saveCSVtable(filename+'_spectral.csv',string,transpose(table))
         
         #export autocorrelation

@@ -22,13 +22,8 @@ class pulseBeam:
         self.AutoCoFFT             =  zeros((self.NT/2))
         self.IntensiometricAutoCo  =  zeros((self.NT))
         self.FROG                  = zeros((self.NT,self.NT))
-        #fill the frequencies and wavelengths arrays and t
-        #self.frequencies           = arange(0,self.NT/self.deltaT/2,1/self.deltaT)
-        #self.frequencies             = zeros((self.NT/2))
-        #self.frequencies[:self.NT/4] = arange(-self.NT/self.deltaT/4.,0,1/self.deltaT)
-        #self.frequencies[self.NT/4:] = arange(0,self.NT/self.deltaT/4.,1/self.deltaT)
         self.frequencies           = 2*pi*fftfreq(self.NT,self.deltaT/self.NT)
-        self.wavelengths           = 3e8/(self.frequencies/2/pi+self.freqZero)   
+        self.wavelengths           = 3e8/(self.frequencies/2/pi+self.freqZero) 
         self.t                     = arange(-self.deltaT/2,self.deltaT/2,self.deltaT/self.NT) 
         self.energy                = 0
         self.peak_power            = 0
@@ -162,7 +157,7 @@ class pulseBeam:
         self.initialSpectralFWHM = spectralfwhm
         print 'maybe this is wrong. initialize_spectrum at pulsebeam'
         
-        deltaFreq = 3e8/self.lambdaZero**2*spectralfwhm/2.35
+        deltaFreq = 3e8/self.lambdaZero**2*spectralfwhm/2.35*2
         
         freq = self.frequencies/2/pi
         self.FFT[:] = exp(-freq**2/2/deltaFreq**2)
@@ -423,14 +418,14 @@ class pulseBeam:
         while(envelope[i] < max_envelope/2. and i < len(envelope)):
            i+=1
         #interpolate
-        i_ = i+(max_envelope/2.-envelope[i-1])/(envelope[i]-envelope[i-1])
+        i_ = i+(envelope[i-1]-max_envelope/2.)/(envelope[i]-envelope[i-1])
            
         #find second intersection
         j = len(envelope)-1
         while(envelope[j] < max_envelope/2. and j > 0):
            j -= 1
         #interpolate
-        j_ = j-(max_envelope/2.-envelope[j])/(envelope[j-1]-envelope[j])
+        j_ = j+(envelope[j]-max_envelope/2.)/(envelope[j+1]-envelope[j])
         
         fwhm2 = (j_-i_)*self.deltaT/self.NT
         
@@ -441,24 +436,23 @@ class pulseBeam:
         envelope = self.get_spectral_intensity()
         max_envelope = max(envelope)
         
-        i = 0.
+        i = 0
         #find first intersection
         while(envelope[i] < max_envelope/2. and i < len(envelope)):
            i+=1
         #interpolate
-        i_ = i+(max_envelope/2.-envelope[i-1])/(envelope[i]-envelope[i-1])
+        i_ = i+(envelope[i-1]-max_envelope/2.)/(envelope[i]-envelope[i-1])
            
         #find second intersection
-        j = len(envelope)-1.
+        j = len(envelope)-1
         while(envelope[j] < max_envelope/2. and j > 0):
-           j -= 1.
+           j -= 1
         #interpolate
-        j_ = j-(max_envelope/2.-envelope[j])/(envelope[j-1]-envelope[j])
+        j_ = j+(envelope[j]-max_envelope/2.)/(envelope[j]-envelope[j+1])
         
-        #fwhm = (j_-i_)/self.deltaT
-        fwhm = (j-i)/self.deltaT #TODO: fix
+        fwhm = (j_-i_)/self.deltaT 
         
-        #print i,j,j_-i_,fwhm
+        #print i,j,i_,j_,j_-i_,fwhm,envelope[i]/max_envelope,envelope[j]/max_envelope
         
         fwhm = 3e8/self.freqZero**2*fwhm
         
@@ -490,7 +484,10 @@ class pulseBeam:
         return self.t
     
     def get_frequencies(self):
-        return roll(self.frequencies,self.NT/2)
+        return roll(self.frequencies,self.NT/2)/2/pi
+    
+    def get_wavelengths(self):
+        return roll(self.wavelengths,self.NT/2)
     
     def get_temporal_envelope(self): #rename?
         return abs(self.ElectricField)
