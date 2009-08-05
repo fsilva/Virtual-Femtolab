@@ -12,10 +12,11 @@ import sys
 import matplotlib as mpl
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
 from matplotlib.backends.backend_wxagg import NavigationToolbar2Wx as Toolbar
-from numpy import array
+from numpy import array,vstack,hstack,transpose
 
 import propagator
 import draw_schematic
+import csv_utils
 
 class FourPlots(wx.Panel):
     def __init__(self, parent, id = -1, dpi = None, **kwargs):
@@ -162,7 +163,9 @@ class VFFrame(wx.Frame):
         self.MainFrame_menubar.Append(wxglade_tmp_menu, "Options")
         wxglade_tmp_menu = wx.Menu()
         self.menu_exportplots_id = wx.NewId()
-        wxglade_tmp_menu.Append(self.menu_exportplots_id, "Export Plots", "", wx.ITEM_NORMAL)
+        wxglade_tmp_menu.Append(self.menu_exportplots_id, "Export Plots/Animations", "", wx.ITEM_NORMAL)
+        self.menu_exportdata_id = wx.NewId()
+        wxglade_tmp_menu.Append(self.menu_exportdata_id, "Export Data", "", wx.ITEM_NORMAL)
         self.MainFrame_menubar.Append(wxglade_tmp_menu, "Export")
         wxglade_tmp_menu = wx.Menu()
         self.MainFrame_menubar.Append(wxglade_tmp_menu, "About")
@@ -191,7 +194,8 @@ class VFFrame(wx.Frame):
         #self.Bind(wx.EVT_MENU, self.menu_open_click, id=-1)
         #self.Bind(wx.EVT_MENU, self.menu_save_click, id=-1)
         self.Bind(wx.EVT_MENU, self.menu_exit_click, id=self.menu_exit)
-        self.Bind(wx.EVT_MENU, self.menu_export_click, id=self.menu_exportplots_id)
+        self.Bind(wx.EVT_MENU, self.menu_exportplots_click, id=self.menu_exportplots_id)
+        self.Bind(wx.EVT_MENU, self.menu_exportdata_click, id=self.menu_exportdata_id)
         #self.Bind(wx.EVT_MENU, self.menu_animation_click, id=-1)
         self.Bind(wx.EVT_BUTTON, self.addbutton_click, self.AddButton)
         self.Bind(wx.EVT_BUTTON, self.editbutton_click, self.EditButton)
@@ -265,13 +269,19 @@ class VFFrame(wx.Frame):
     def menu_exit_click(self, event): # wxGlade: VFFrame.<event_handler>
         self.Close()
 
-    def menu_export_click(self, event): # wxGlade: VFFrame.<event_handler>
-        import export_dialog
+    def menu_exportplots_click(self, event): # wxGlade: VFFrame.<event_handler>
+        import export_dialog  #todo change this file's name
         dialog = export_dialog.ExportFrame(self)
-        dialog.set_info(self.export)
+        dialog.set_info(self.export)  #TODO: change the name to export function ,because it could be plots or data
         dialog.Show()
         
-
+    def menu_exportdata_click(self, event): # wxGlade: VFFrame.<event_handler>
+        dialog = wx.FileDialog(self,'Choose file prefix to save data','./','data','No extension. Data will be saved in various csv files.|*.',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR)
+        if(dialog.ShowModal() == wx.ID_OK):
+            filename = dialog.GetFilename()
+            self.export_data(filename)
+        dialog.Destroy()
+        
     def menu_computational_window_click(self, event):
         import edit_computationalwindow
         dialog = edit_computationalwindow.EditComputationalWindow(self)
@@ -738,11 +748,51 @@ class VFFrame(wx.Frame):
         final_image.paste(img2,(0,0))
         final_image.paste(img3,(img2.size[0],0))
         final_image.paste(img1,(0,img2.size[1]))
-        #final_image.show()
+
         final_image.save(filename)
-        #img1.show()
-        #img2.show()
-        #img3.show()
+
+        
+    def export_data(self,filename):
+        pulseBeam = self.propagator.get_pulseBeam()
+        
+        #export temporal data
+        t_envelope = pulseBeam.get_t()
+        envelope = pulseBeam.get_temporal_envelope()
+        electric_field = pulseBeam.get_real_electric_field()
+        temporal_phase = pulseBeam.get_temporal_phase()
+        table = vstack((t_envelope,envelope))
+        if(not electric_field is None):
+            table = vstack((table,electric_field))
+            string = 'time(s), envelope, electric field, phase'
+        else:
+            string = 'time(s),envelope,phase'
+        table = vstack((table,temporal_phase))
+        csv_utils.saveCSVtable(filename+'_temporal.csv',string,transpose(table))
+        
+        #export spectral data
+        freq = pulseBeam.get_frequencies()
+        spectrum = pulseBeam.get_spectral_intensity()
+        spectral_phase = pulseBeam.get_spectral_phase()
+        table = vstack((freq,spectrum))
+        string = 'envelope frequency, spectrum, spectral phase'
+        table = vstack((table,spectral_phase))
+        csv_utils.saveCSVtable(filename+'_spectral.csv',string,transpose(table))
+        
+        #export autocorrelation
+        t = pulseBeam.get_t()
+        inter_autoco     = pulseBeam.get_interferometric_autoco()
+        inten_autoco     = pulseBeam.get_intensiometric_autoco()
+        table = vstack((t,inten_autoco))
+        table = vstack((table,inter_autoco))
+        string = 't, inter_autoco, inten_autoco'
+        csv_utils.saveCSVtable(filename+'_autoco.csv',string,transpose(table))
+        
+        #to export frog, uncomment these lines
+        # removed it because it produced big files and probably few people will use raw frog data
+        #frog, frog_limits = pulseBeam.get_SHGFROG()
+        #csv_utils.saveCSVtable(filename+'_frog.csv','',frog)
+        
+        
 # end of class VFFrame
 
 def main():
