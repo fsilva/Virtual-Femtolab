@@ -18,7 +18,9 @@ def helper_draw_box(dc,x,width,height,selected):
     
 def helper_draw_text(dc,x,width,height,text_top,text_bottom):
     #draw text
+    dc.SetFont(wx.Font(14, wx.SWISS, wx.NORMAL, wx.LIGHT))
     dc.DrawLabel(text_top,wx.Rect(x,height*0.1,width,height*0.1),wx.ALIGN_CENTER)
+    dc.SetFont(wx.Font(11, wx.SWISS, wx.NORMAL, wx.LIGHT))
     dc.DrawLabel(text_bottom,wx.Rect(x,height*0.85,width,height*0.15),wx.ALIGN_CENTER)
 
 def helper_draw_beam(dc,x,width,height,size_in,size_out):

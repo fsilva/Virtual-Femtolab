@@ -608,7 +608,13 @@ class VFFrame(wx.Frame):
         else:
             x = 5-self.distance/self.propagator.get_max_z()*(total_width-available_width)
         
-        text = '6.6 fs' #TODO: fix
+        #text = '6.6 fs' #TODO: fix
+        ipb = self.propagator.get_initialPulseBeam()
+        tmp,t_fwhm = ipb.calculate_fwhm() #function naming inconstitent, change! TODO TODO
+        f_fwhm  = ipb.get_spectral_fwhm()
+        text = '%.1f fs\n%.1f nm'%(t_fwhm*1e15,f_fwhm*1e9)
+        
+        
         if(self.selected == 0):
             selected = True
         else:
