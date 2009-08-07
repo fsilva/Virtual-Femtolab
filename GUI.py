@@ -208,7 +208,6 @@ class VFFrame(wx.Frame):
         self.__do_layout()
         
         self.Bind(wx.EVT_MENU, self.menu_computational_window_click, id=self.menu_compwindow_id)
-
         self.Bind(wx.EVT_MENU, self.menu_open_click, id=self.menu_load_id)
         self.Bind(wx.EVT_MENU, self.menu_save_click, id=self.menu_save_id)
         self.Bind(wx.EVT_MENU, self.menu_exit_click, id=self.menu_exit)
@@ -284,7 +283,6 @@ class VFFrame(wx.Frame):
         # end wxGlade
 
     def menu_open_click(self, event): # wxGlade: VFFrame.<event_handler>
-        event.Skip()
         dialog = wx.FileDialog(self,'Choose file to load state','./','state','Virtual Femtolab Setup(*.fs)|*.fs| All Files (*.*)|*.*',wx.FD_CHANGE_DIR)
         if(dialog.ShowModal() == wx.ID_OK):
             filename = dialog.GetFilename()
@@ -298,7 +296,6 @@ class VFFrame(wx.Frame):
         
 
     def menu_save_click(self, event): # wxGlade: VFFrame.<event_handler>
-        event.Skip()
         dialog = wx.FileDialog(self,'Choose file to save current state','./','state','Virtual Femtolab Setup|*.fs',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR)
         if(dialog.ShowModal() == wx.ID_OK):
             filename = dialog.GetFilename()
@@ -321,7 +318,6 @@ class VFFrame(wx.Frame):
         dialog.Show()
         
     def menu_exportdata_click(self, event): # wxGlade: VFFrame.<event_handler>
-        event.Skip()
         dialog = wx.FileDialog(self,'Choose file prefix to save data','./','data','No extension. Data will be saved in various csv files.|*.',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR)
         if(dialog.ShowModal() == wx.ID_OK):
             filename = dialog.GetFilename()
@@ -329,7 +325,6 @@ class VFFrame(wx.Frame):
         dialog.Destroy()
         
     def menu_computational_window_click(self, event):
-        event.Skip()
         import edit_computationalwindow
         dialog = edit_computationalwindow.EditComputationalWindow(self)
         dialog.set_info(self.NT,self.deltaT,self.propagator.get_pulseBeam().freqZero,self.change_computational_window,self.refresh_everything)
@@ -549,7 +544,8 @@ class VFFrame(wx.Frame):
         self.VFData.Fit()
     
     def click_schematic(self,event):
-        
+        event.Skip()
+        return
         width = 120
 
         x = event.GetPosition()[0]
@@ -575,6 +571,7 @@ class VFFrame(wx.Frame):
         self.repaint_schematic()
         
     def paint_event(self,event):
+        event.Skip()
         dc = wx.BufferedPaintDC(self.SchematicPanel, self.buffer)
 #        dc = wx.PaintDC(self.SchematicPanel)
 #        self.repaint_schematic()
