@@ -218,19 +218,18 @@ class VFFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.removebutton_click, self.RemoveButton)
         self.Bind(wx.EVT_BUTTON, self.findwaist_click, self.FindWaistButton)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.distanceslider_change, self.DistanceSlider)
-        
         self.Bind(wx.EVT_TEXT_ENTER, self.edit_distance_change)
-        
         #self.SchematicPanel.Bind(wx.EVT_PAINT, self.repaint_schematic) 
         self.Bind(wx.EVT_PAINT, self.paint_event) 
         self.SchematicPanel.Bind(wx.EVT_LEFT_UP, self.click_schematic) 
+        self.SchematicPanel.Bind(wx.EVT_SIZE, self.resize_schematic) 
     
         # end wxGlade
         
         self.init_calculations()
         self.refresh_interface()
         self.refresh_grid_information()
-        self.repaint_schematic()
+        self.resize_schematic(None)
 
     def __set_properties(self):
         # begin wxGlade: VFFrame.__set_properties
@@ -545,7 +544,7 @@ class VFFrame(wx.Frame):
     
     def click_schematic(self,event):
         event.Skip()
-        return
+
         width = 120
 
         x = event.GetPosition()[0]
@@ -574,7 +573,7 @@ class VFFrame(wx.Frame):
         event.Skip()
         dc = wx.BufferedPaintDC(self.SchematicPanel, self.buffer)
 #        dc = wx.PaintDC(self.SchematicPanel)
-#        self.repaint_schematic()
+        self.repaint_schematic()
     
         
     def repaint_schematic(self):
@@ -589,6 +588,17 @@ class VFFrame(wx.Frame):
 
         #event.Skip()
         dc.EndDrawing()
+        
+    def resize_schematic(self,event):
+        size = self.SchematicPanel.GetClientSize()
+        print size
+        del self.buffer,self.dc
+        self.buffer = wx.EmptyBitmap(size.width, size.height)
+        self.dc = wx.BufferedDC(None, self.buffer )
+        self.SchematicPanel.GetEventHandler().ProcessEvent(wx.PaintEvent())
+
+        #self.repaint_schematic()
+        #TODO fix problem with resizing: no redraw
         
     def draw_schematic(self,dc):
         width = 120
