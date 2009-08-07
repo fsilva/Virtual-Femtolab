@@ -23,7 +23,7 @@ class FourPlots(wx.Panel):
     def __init__(self, parent, id = -1, dpi = None, **kwargs):
         wx.Panel.__init__(self, parent, id=id, **kwargs)
         self.figure = mpl.figure.Figure(dpi=75, figsize=(4,3),facecolor='#dfdfdf')
-        self.figure.subplots_adjust(hspace = 0.33,wspace=0.33)
+        self.figure.subplots_adjust(hspace = 0.4,wspace=0.4)
         self.canvas = Canvas(self, -1, self.figure)
         self.toolbar = Toolbar(self.canvas)
         self.toolbar.Realize()
@@ -64,6 +64,10 @@ class FourPlots(wx.Panel):
             self.plot1_twinx = self.plot1.twinx()
             self.plot1_line3, = self.plot1_twinx.plot(t_phase, temporal_phase, 'k')
             
+            self.plot1.set_xlabel('Time(s)',fontsize='small')
+            self.plot1.set_ylabel('Electric Field(sqrt(Ws^-1))',fontsize='small')
+            self.plot1_twinx.set_ylabel('Phase (rad))',fontsize='small')
+            
             if(len(temporal_phase) > 0):
                 max_phase = max(temporal_phase)
                 min_phase = min(temporal_phase)
@@ -76,14 +80,21 @@ class FourPlots(wx.Panel):
             self.plot2_twinx = self.plot2.twinx()
             self.plot2_line2, = self.plot2_twinx.plot(freq_phase, spectral_phase, 'k')
             
+            self.plot2.set_xlabel('Envelope Frequency(rad s^-1)',fontsize='small')
+            self.plot2.set_ylabel('Intensity (??sqrt(Ws^-1))',fontsize='small')
+            self.plot2_twinx.set_ylabel('Phase (rad))',fontsize='small')
+            
             #autoco
             self.plot3_line1, = self.plot3.plot(t_envelope, inter_autoco, 'b')
             self.plot3_line2, = self.plot3.plot(t_envelope, inten_autoco, 'r')            
+            self.plot3.set_xlabel('Delay(s)',fontsize='small')
 #            self.plot3_twinx = self.plot2.twinx()  #TODO: add autocoFFT
 #            self.plot3_line2, = self.plot2_twinx.plot(autoco_fft, 'k')
 
             #SHG FROG
             self.plot4_imshow = self.plot4.imshow(frog, interpolation='bilinear',extent=frog_limits,aspect="auto")
+            self.plot4.set_xlabel('Delay (s)',fontsize='small')
+            self.plot4.set_ylabel('Envelope Frequency(rad s^-1)',fontsize='small')
             #TODO: change bilinear to better, but also fast, interpolation
             #extent = pulsebeam.FROGxmin+k*pulsebeam.FROGdeltax, pulsebeam.FROGxmin+l*pulsebeam.FROGdeltax, \
             #             pulsebeam.FROGymin+i*pulsebeam.FROGdeltay, pulsebeam.FROGymin+j*pulsebeam.FROGdeltay
@@ -321,7 +332,7 @@ class VFFrame(wx.Frame):
         event.Skip()
         import edit_computationalwindow
         dialog = edit_computationalwindow.EditComputationalWindow(self)
-        dialog.set_info(self.NT,self.deltaT,self.change_computational_window,self.refresh_everything)
+        dialog.set_info(self.NT,self.deltaT,self.propagator.get_pulseBeam().freqZero,self.change_computational_window,self.refresh_everything)
         dialog.Show()
         
 
@@ -708,6 +719,7 @@ class VFFrame(wx.Frame):
         plot1 = figure.add_subplot(121,title='Temporal Profile')
         plot2 = figure.add_subplot(122,title='Spectral Profile')
         
+        
         #drawing code 
             
         pulseBeam = self.propagator.get_pulseBeam()
@@ -730,6 +742,10 @@ class VFFrame(wx.Frame):
         plot1_twinx = plot1.twinx()
         plot1_twinx.plot(t_phase, temporal_phase, 'k')
         
+        plot1.set_xlabel('Time(s)',fontsize='small')
+        plot1.set_ylabel('Electric Field(sqrt(Ws^-1))',fontsize='small')
+        plot1_twinx.set_ylabel('Phase (rad))',fontsize='small')
+        
         if(len(temporal_phase) > 0):
             max_phase = max(temporal_phase)
             min_phase = min(temporal_phase)
@@ -741,6 +757,10 @@ class VFFrame(wx.Frame):
         plot2.plot(freq, spectrum, 'g')
         plot2_twinx = plot2.twinx()
         plot2_twinx.plot(freq_phase, spectral_phase, 'k')
+        
+        plot2.set_xlabel('Envelope Frequency(rad s^-1)',fontsize='small')
+        plot2.set_ylabel('Intensity (??sqrt(Ws^-1))',fontsize='small')
+        plot2_twinx.set_ylabel('Phase (rad))',fontsize='small')
         
         figure.savefig(filename,format='png')
         del canvas

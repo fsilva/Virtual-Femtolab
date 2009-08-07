@@ -454,6 +454,7 @@ class pulseBeam:
         
         #print i,j,i_,j_,j_-i_,fwhm,envelope[i]/max_envelope,envelope[j]/max_envelope
         
+        
         fwhm = 3e8/self.freqZero**2*fwhm
         
         return fwhm

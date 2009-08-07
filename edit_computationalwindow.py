@@ -20,8 +20,8 @@ class EditComputationalWindow(wx.Frame):
         
         self.label_21 = wx.StaticText(self, -1, "Temporal Width (fs)")
         self.spin_ctrl_2 = wx.SpinCtrl(self, -1, "128", min=0, max=100000)
-        
-        self.label_31 = wx.StaticText(self, -1, "Spectral Resolution")
+         
+        self.label_31 = wx.StaticText(self, -1, "Spectral Resolution\n@ central frequency)")
         self.label_32 = wx.StaticText(self, -1, " nm")
         
         self.button_2 = wx.Button(self, -1, "Refresh")
@@ -67,9 +67,11 @@ class EditComputationalWindow(wx.Frame):
         self.Layout()
         # end wxGlade
         
-    def set_info(self,num_points,temporal_width,change_function,refresh_function):
+    def set_info(self,num_points,temporal_width,freqZero,change_function,refresh_function):
         self.change_function = change_function
         self.refresh_function = refresh_function
+        
+        self.freqZero = freqZero
         
         self.spin_ctrl_1.SetValue(num_points)
         self.spin_ctrl_2.SetValue(temporal_width*1e15)
@@ -78,7 +80,14 @@ class EditComputationalWindow(wx.Frame):
 
         
     def change_spin(self,event):
-        self.label_32.SetLabel('TODO')
+        num_points = int(self.spin_ctrl_1.GetValue())
+        temporal_width = float(self.spin_ctrl_2.GetValue())*1e-15
+        
+        spectral_resolution = 3e8/self.freqZero**2/temporal_width
+        self.label_32.SetLabel('%5.2f nm'%(spectral_resolution*1e9))
+        
+        #spectral_resolution = 1/temporal_width
+        #self.label_32.SetLabel('%5.2e Hz'%(spectral_resolution))
         
         if(not event is None):
             event.Skip()
@@ -88,6 +97,7 @@ class EditComputationalWindow(wx.Frame):
         temporal_width = float(self.spin_ctrl_2.GetValue())*1e-15
         
         self.change_function(num_points,temporal_width)
+        self.change_spin(None)
         self.refresh_function()
         
         if(not event is None):
