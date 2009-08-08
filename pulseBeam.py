@@ -552,7 +552,7 @@ class pulseBeam:
         self.FROG = zeros((self.NT,self.NT))
         
         
-    def phase_blank(self,t,data_array,phase_array,threshold): #TODO: speed this up, perhaps
+    def phase_blank(self,t,data_array,phase_array,threshold): 
         length = len(t) 
         absarray = abs(data_array)
         absarray /= max(absarray) 

@@ -16,6 +16,7 @@ import propagator
 import draw_schematic
 import csv_utils
 import plots
+import config
 
 
 # begin wxGlade: extracode
@@ -366,10 +367,10 @@ class VFFrame(wx.Frame):
         
     def init_calculations(self):
         #TODO: move this into a separate config file
-        self.NT = 64
-        self.deltaT = 64.e-15
-        self.lambdaZero = 8.0e-7
-        self.wavelength_limit = 1.6e-6
+        self.NT = config.NT
+        self.deltaT = config.deltaT
+        self.lambdaZero = config.lambdaZero
+        self.wavelength_limit = config.lambdaZero*2
         self.propagator = propagator.Propagator(self.NT,self.deltaT,self.lambdaZero)
         self.propagator.example_pulseBeam()
         self.propagator.example_elements()
@@ -487,7 +488,7 @@ class VFFrame(wx.Frame):
     def click_schematic(self,event):
         event.Skip()
 
-        width = 120
+        width = config.schematic_element_width
 
         x = event.GetPosition()[0]
         
@@ -504,8 +505,6 @@ class VFFrame(wx.Frame):
             
         i = int(x/(width+5))
         
-        print 'TODO: click_schematic() - 120 needs to become global'
-
         if(i <= len(self.propagator.get_elements())):
             self.selected = i
             
@@ -538,8 +537,8 @@ class VFFrame(wx.Frame):
         
         
     def draw_schematic(self,dc):
-        width = 120
-        height = 100   
+        width = config.schematic_element_width
+        height = config.schematic_element_height 
         
         elements = self.propagator.get_elements()
         

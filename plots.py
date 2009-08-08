@@ -84,8 +84,7 @@ class FourPlots(wx.Panel):
             self.plot3_line1, = self.plot3.plot(t_autoco, inter_autoco, 'b')
             self.plot3_line2, = self.plot3.plot(t_autoco, inten_autoco, 'r')            
             self.plot3.set_xlabel('Delay(s)',fontsize='small')
-#            self.plot3_twinx = self.plot2.twinx()  #TODO: add autocoFFT
-#            self.plot3_line2, = self.plot2_twinx.plot(autoco_fft, 'k')
+
 
             #SHG FROG
             self.plot4_imshow = self.plot4.imshow(frog, interpolation='bilinear',extent=frog_limits,aspect="auto")
@@ -133,7 +132,7 @@ class FourPlots(wx.Panel):
             self.plot3.set_xlim((min(t_autoco),max(t_autoco)))
             self.plot3_line1.set_data(t_autoco,inter_autoco)
             self.plot3_line2.set_data(t_autoco,inten_autoco)
-            #TODO: add autocofft
+
             #SHG FROG
             self.plot4_imshow.set_data(frog)
             
