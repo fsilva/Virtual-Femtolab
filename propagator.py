@@ -13,16 +13,26 @@ class Propagator:
         self.initialPulseBeam = pulseBeam.pulseBeam(NT,deltaT,lambdaZero)
         self.pulseBeam = pulseBeam.pulseBeam(NT,deltaT,lambdaZero)
         
+        self.NT = NT
+        self.deltaT = deltaT
         self.lambdaZero = lambdaZero
         
         self.elements = []
         self.current_z = 0
     
     def change_computational_window(self,NT,deltaT):
+        self.NT = NT
+        self.deltaT = deltaT
         self.initialPulseBeam.change_window(NT,deltaT)
         del self.pulseBeam
         self.pulseBeam = pulseBeam.pulseBeam(NT,deltaT,self.lambdaZero)
         self.change_z(self.current_z)
+        
+    def change_central_wavelength(self,lambdaZero):
+        self.lambdaZero = lambdaZero
+        self.initialPulseBeam.change_central_wavelength(lambdaZero)
+        del self.pulseBeam
+        self.pulseBeam = pulseBeam.pulseBeam(self.NT,self.deltaT,lambdaZero)
         
     def get_initialPulseBeam(self):
         return self.initialPulseBeam

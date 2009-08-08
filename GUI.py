@@ -346,10 +346,10 @@ class VFFrame(wx.Frame):
         dialog.set_info(self.NT,self.deltaT,self.propagator.get_pulseBeam().freqZero,self.change_computational_window,self.refresh_everything)
         dialog.Show()
         
-    def menu_computational_window_click(self, event):
+    def menu_central_wavelength_click(self, event):
         import edit_centralwavelength
         dialog = edit_centralwavelength.EditCentralWavelength(self)
-        dialog.set_info(self.propagator.get_pulseBeam().freqZero,self.change_computational_window,self.refresh_everything)
+        dialog.set_info(3e8/self.propagator.get_pulseBeam().freqZero,self.change_central_wavelength,self.refresh_everything)
         dialog.Show()
         
 
@@ -540,6 +540,14 @@ class VFFrame(wx.Frame):
         self.deltaT = deltaT
         
         self.propagator.change_computational_window(NT, deltaT) 
+        self.plot.reset()
+        
+    def change_central_wavelength(self, central_wavelength, wavelength_limit):
+        self.lambdaZero = central_wavelength
+        self.freqZero = 3e8/self.lambdaZero
+        self.wavelength_limit = wavelength_limit
+
+        self.propagator.change_central_wavelength(central_wavelength)
         self.plot.reset()
         
         

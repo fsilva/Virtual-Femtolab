@@ -110,7 +110,34 @@ class pulseBeam:
             tmp_rate = self.rate
             self.__init__(NT,deltaT,self.lambdaZero)
             self.initialize_spectrum(tmp_spectralFWHM , tmp_GVD , tmp_TOD , tmp_FOD , tmp_spot, tmp_curvature, tmp_peak_power , tmp_energy , tmp_rate)
-            
+    
+    def change_central_wavelength(self, lambdaZero):
+        if(self.initialTemporalFWHM != 0):
+            #save data
+            tmp_timeFWHM = self.initialTemporalFWHM
+            tmp_GVD = self.initialGVD
+            tmp_TOD = self.initialTOD
+            tmp_FOD = self.initialFOD
+            tmp_spot = self.BeamProfile_spot
+            tmp_curvature = self.BeamProfile_curvature
+            tmp_peak_power = self.peak_power
+            tmp_energy = self.energy
+            tmp_rate = self.rate
+            self.__init__(self.NT,self.deltaT,lambdaZero)
+            self.initialize_pulse(tmp_timeFWHM , tmp_GVD , tmp_TOD , tmp_FOD , tmp_spot, tmp_curvature, tmp_peak_power , tmp_energy , tmp_rate)
+        else:
+            tmp_spectralFWHM = self.initialSpectralFWHM
+            tmp_GVD = self.initialGVD
+            tmp_TOD = self.initialTOD
+            tmp_FOD = self.initialFOD
+            tmp_spot = self.BeamProfile_spot
+            tmp_curvature = self.BeamProfile_curvature
+            tmp_peak_power = self.peak_power
+            tmp_energy = self.energy
+            tmp_rate = self.rate
+            self.__init__(self.NT,self.deltaT,lambdaZero)
+            self.initialize_spectrum(tmp_spectralFWHM , tmp_GVD , tmp_TOD , tmp_FOD , tmp_spot, tmp_curvature, tmp_peak_power , tmp_energy , tmp_rate)
+                
         
         
     def initialize_pulse(self, timeFWHM, GVD,TOD,FOD, spot, curvature, peak_power, energy, rate):
