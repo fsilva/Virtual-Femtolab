@@ -24,6 +24,11 @@ import plots
 
 
 class VFFrame(wx.Frame):
+    
+    
+    
+################################ initialization functions ################################
+    
     def __init__(self, *args, **kwds):
         # begin wxGlade: VFFrame.__init__
         kwds["style"] = wx.DEFAULT_FRAME_STYLE
@@ -157,6 +162,44 @@ class VFFrame(wx.Frame):
         self.SetSizer(self.sizer_1)
         self.Layout()
         # end wxGlade
+        
+
+    def init_grid_information(self):
+        self.VFData.SetDefaultCellFont(wx.Font(12, wx.FONTFAMILY_SWISS, wx.NORMAL, wx.FONTWEIGHT_NORMAL))
+        self.VFData.SetCellValue(0,0,'Num.Points')
+        self.VFData.SetCellValue(1,0,'Delta T')
+        self.VFData.SetCellValue(1,2,'fs')
+        self.VFData.SetCellValue(2,0,'FWHM (iterative)')
+        self.VFData.SetCellValue(2,2,'fs')
+        self.VFData.SetCellValue(3,0,'FWHM (gaussian fit)')
+        self.VFData.SetCellValue(3,2,'fs')        
+        self.VFData.SetCellValue(4,0,'Spectral FWHM')
+        self.VFData.SetCellValue(4,2,'nm')
+        self.VFData.SetCellValue(5,0,'Beam Spot')
+        self.VFData.SetCellValue(5,2,'mm')
+        self.VFData.SetCellValue(6,0,'Beam Curvature')
+        self.VFData.SetCellValue(6,2,'m')
+        self.VFData.SetCellValue(7,0,'Peak Power')
+        self.VFData.SetCellValue(7,2,'W')
+        self.VFData.SetCellValue(8,0,'Peak Intensity')
+        self.VFData.SetCellValue(8,2,'Wm^-2')
+        self.VFData.SetCellValue(9,0,'Pulse Energy')
+        self.VFData.SetCellValue(9,2,'J')
+        self.VFData.SetCellValue(10,0,'Rep. Rate')
+        self.VFData.SetCellValue(10,2,'MHz')
+        self.VFData.SetCellValue(11,0,'CW Power')
+        self.VFData.SetCellValue(11,2,'W')
+        self.VFData.SetCellValue(12,0,'z')
+        self.VFData.SetCellValue(12,2,'m')
+                
+        
+        
+        
+        
+        
+        
+################################ menu click events ################################        
+        
 
     def menu_open_click(self, event): # wxGlade: VFFrame.<event_handler>
         dialog = wx.FileDialog(self,'Choose file to load state','./','state','Virtual Femtolab Setup(*.fs)|*.fs| All Files (*.*)|*.*',wx.FD_CHANGE_DIR)
@@ -211,6 +254,31 @@ class VFFrame(wx.Frame):
         dialog = edit_centralwavelength.EditCentralWavelength(self)
         dialog.set_info(3e8/self.propagator.get_pulseBeam().freqZero,self.change_central_wavelength,self.refresh_everything)
         dialog.Show()
+        
+        
+################################ callbacks ################################        
+        
+
+    def change_computational_window(self, NT, deltaT):
+        self.NT = NT
+        self.deltaT = deltaT
+
+        self.propagator.change_computational_window(NT, deltaT) 
+        self.plot.reset()
+
+    def change_central_wavelength(self, central_wavelength, wavelength_limit):
+        self.lambdaZero = central_wavelength
+        self.freqZero = 3e8/self.lambdaZero
+        self.wavelength_limit = wavelength_limit
+
+        self.propagator.change_central_wavelength(central_wavelength)
+        self.plot.reset()
+        
+        
+        
+        
+        
+################################ button click events ################################        
         
 
     def addbutton_click(self, event): # wxGlade: VFFrame.<event_handler>
@@ -270,7 +338,11 @@ class VFFrame(wx.Frame):
             self.change_distance(z)
             self.DistanceSlider.SetValue(z*1000/self.propagator.get_max_z())
             
+            
+            
+            
         
+################################ other events ################################
 
     def distanceslider_change(self, event): # wxGlade: VFFrame.<event_handler>
         distance = self.DistanceSlider.GetValue()/1000.*self.propagator.get_max_z()
@@ -288,6 +360,9 @@ class VFFrame(wx.Frame):
             self.DistanceText.ChangeValue(str(self.distance))
         
         
+        
+################################ pulse calculation functions ################################        
+                
         
     def init_calculations(self):
         #TODO: move this into a separate config file
@@ -325,11 +400,16 @@ class VFFrame(wx.Frame):
         self.repaint_schematic()
         
         
+       
+       
+       
+       
+################################ interface redraw and refresh functions ################################       
+       
         
     def refresh_everything(self):
         self.change_distance(self.distance)
-        
-        
+
     
     def refresh_interface(self):
         pulseBeam = self.propagator.get_pulseBeam()
@@ -364,53 +444,7 @@ class VFFrame(wx.Frame):
         frog, frog_limits = pulseBeam.get_SHGFROG()
         self.plot.redraw(t_field,envelope,electric_field,t_phase,temporal_phase,freq,spectrum,freq_phase,spectral_phase,t_autoco,inter_autoco,inten_autoco,frog,frog_limits)
         
-        
-        
-    def init_grid_information(self):
-        self.VFData.SetDefaultCellFont(wx.Font(12, wx.FONTFAMILY_SWISS, wx.NORMAL, wx.FONTWEIGHT_NORMAL))
-        self.VFData.SetCellValue(0,0,'Num.Points')
-        self.VFData.SetCellValue(1,0,'Delta T')
-        self.VFData.SetCellValue(1,2,'fs')
-        self.VFData.SetCellValue(2,0,'FWHM (iterative)')
-        self.VFData.SetCellValue(2,2,'fs')
-        self.VFData.SetCellValue(3,0,'FWHM (gaussian fit)')
-        self.VFData.SetCellValue(3,2,'fs')        
-        self.VFData.SetCellValue(4,0,'Spectral FWHM')
-        self.VFData.SetCellValue(4,2,'nm')
-        self.VFData.SetCellValue(5,0,'Beam Spot')
-        self.VFData.SetCellValue(5,2,'mm')
-        self.VFData.SetCellValue(6,0,'Beam Curvature')
-        self.VFData.SetCellValue(6,2,'m')
-        self.VFData.SetCellValue(7,0,'Peak Power')
-        self.VFData.SetCellValue(7,2,'W')
-        self.VFData.SetCellValue(8,0,'Peak Intensity')
-        self.VFData.SetCellValue(8,2,'Wm^-2')
-        self.VFData.SetCellValue(9,0,'Pulse Energy')
-        self.VFData.SetCellValue(9,2,'J')
-        self.VFData.SetCellValue(10,0,'Rep. Rate')
-        self.VFData.SetCellValue(10,2,'MHz')
-        self.VFData.SetCellValue(11,0,'CW Power')
-        self.VFData.SetCellValue(11,2,'W')
-        self.VFData.SetCellValue(12,0,'z')
-        self.VFData.SetCellValue(12,2,'m')
 
-        
-    def change_computational_window(self, NT, deltaT):
-        self.NT = NT
-        self.deltaT = deltaT
-        
-        self.propagator.change_computational_window(NT, deltaT) 
-        self.plot.reset()
-        
-    def change_central_wavelength(self, central_wavelength, wavelength_limit):
-        self.lambdaZero = central_wavelength
-        self.freqZero = 3e8/self.lambdaZero
-        self.wavelength_limit = wavelength_limit
-
-        self.propagator.change_central_wavelength(central_wavelength)
-        self.plot.reset()
-        
-        
         
     def refresh_grid_information(self):
         pulseBeam = self.propagator.get_pulseBeam()
@@ -442,6 +476,13 @@ class VFFrame(wx.Frame):
         self.VFData.SetCellValue(12,1,'%3.3e'%(self.distance))
 
         self.VFData.Fit()
+    
+    
+    
+    
+    
+################################ schematic related functions ################################        
+
     
     def click_schematic(self,event):
         event.Skip()
@@ -551,6 +592,15 @@ class VFFrame(wx.Frame):
             z += elements[i].length
             x += width+5
             
+
+
+
+
+
+
+
+################################ export callbacks ################################        
+
 
     def export(self,export_type, export_elements, numframes):
         if(export_elements == 1 and sys.platform=='darwin'):
@@ -781,6 +831,11 @@ class VFFrame(wx.Frame):
         # removed it because it produced big files and probably few people will use raw frog data
         #frog, frog_limits = pulseBeam.get_SHGFROG()
         #csv_utils.saveCSVtable(filename+'_frog.csv','',frog)
+        
+        
+        
+        
+        
         
         
 # end of class VFFrame
