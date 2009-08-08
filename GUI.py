@@ -234,7 +234,7 @@ class VFFrame(wx.Frame):
     def menu_exportplots_click(self, event): # wxGlade: VFFrame.<event_handler>
         import export_dialog  #todo change this file's name
         dialog = export_dialog.ExportFrame(self)
-        dialog.set_info(self.export)  #TODO: change the name to export function ,because it could be plots or data
+        dialog.set_info(self.export_frame_or_animations) 
         dialog.Show()
         
     def menu_exportdata_click(self, event): # wxGlade: VFFrame.<event_handler>
@@ -366,7 +366,6 @@ class VFFrame(wx.Frame):
                 
         
     def init_calculations(self):
-        #TODO: move this into a separate config file
         self.NT = config.NT
         self.deltaT = config.deltaT
         self.lambdaZero = config.lambdaZero
@@ -601,7 +600,7 @@ class VFFrame(wx.Frame):
 ################################ export callbacks ################################        
 
 
-    def export(self,export_type, export_elements, numframes):
+    def export_frame_or_animations(self,export_type, export_elements, numframes):
         if(export_elements == 1 and sys.platform=='darwin'):
             string = 'Please do not occlude the window during the process. Doing so will result in incorrect output.'
             dialog = wx.MessageDialog(self,string,'Important',wx.OK|wx.ICON_INFORMATION)
@@ -748,7 +747,7 @@ class VFFrame(wx.Frame):
         imgdata.seek(0)
         img2 = Image.open(imgdata)
         
-        #import VFData to buffer 3   #TODO: do this in a much reliable way!
+        #import VFData to buffer 3   #TODO: do this in a more reliable way!
         import sys
         if(sys.platform == 'darwin'): #workaround for macosx
             import os
