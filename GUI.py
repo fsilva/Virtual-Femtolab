@@ -243,10 +243,11 @@ class VFFrame(wx.Frame):
         self.VFData.SetColLabelValue(1, "Value")
         self.VFData.SetColLabelValue(2, "Units")
         self.VFData.SetSize((255, 150)) #150 is wrong, but it works anyway. 255 is hardcoded - TODO:fix
-        self.SchematicPanel.SetSize((890, 130))
-        size = self.SchematicPanel.GetClientSize()
-        self.buffer = wx.EmptyBitmap(size.width, size.height)
-        self.dc = wx.BufferedDC(None, self.buffer )
+        #self.SchematicPanel.SetSize((890, 160))
+        #size = self.SchematicPanel.GetClientSize()
+        #print size
+        #self.buffer = wx.EmptyBitmap(size.width, size.height)
+        #self.dc = wx.BufferedDC(None, self.buffer )
         #self.dc.SetBackground(wx.Brush('gray'))
         #self.dc.Clear()
         
@@ -269,7 +270,7 @@ class VFFrame(wx.Frame):
         self.sizer_6.Add(self.sizer_7, 3, wx.EXPAND, 0)
         self.sizer_6.Add(self.VFData,0,wx.EXPAND,0)
         self.sizer_2.Add(self.sizer_6, 1, wx.EXPAND, 0)
-        self.sizer_9.Add(self.SchematicPanel, 5, wx.EXPAND, 0)
+        self.sizer_9.Add(self.SchematicPanel, 4, wx.EXPAND, 0)
         self.sizer_10 = wx.BoxSizer(wx.HORIZONTAL)
         self.sizer_10.Add(self.DistanceSlider, 5, wx.ALL|wx.EXPAND, 5)
         self.sizer_10.Add(self.DistanceText, 1, wx.ALL|wx.EXPAND, 5)
@@ -570,7 +571,7 @@ class VFFrame(wx.Frame):
         self.repaint_schematic()
         
     def paint_event(self,event):
-        event.Skip()
+        #event.Skip()
         dc = wx.BufferedPaintDC(self.SchematicPanel, self.buffer)
 #        dc = wx.PaintDC(self.SchematicPanel)
         self.repaint_schematic()
@@ -591,14 +592,9 @@ class VFFrame(wx.Frame):
         
     def resize_schematic(self,event):
         size = self.SchematicPanel.GetClientSize()
-        print size
-        del self.buffer,self.dc
         self.buffer = wx.EmptyBitmap(size.width, size.height)
-        self.dc = wx.BufferedDC(None, self.buffer )
-        self.SchematicPanel.GetEventHandler().ProcessEvent(wx.PaintEvent())
-
-        #self.repaint_schematic()
-        #TODO fix problem with resizing: no redraw
+        self.dc = wx.BufferedDC(None, self.buffer)
+        
         
     def draw_schematic(self,dc):
         width = 120
@@ -615,7 +611,6 @@ class VFFrame(wx.Frame):
         else:
             x = 5-self.distance/self.propagator.get_max_z()*(total_width-available_width)
         
-        #text = '6.6 fs' #TODO: fix
         ipb = self.propagator.get_initialPulseBeam()
         tmp,t_fwhm = ipb.calculate_fwhm() #function naming inconstitent, change! TODO TODO
         f_fwhm  = ipb.get_spectral_fwhm()
