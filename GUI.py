@@ -171,6 +171,7 @@ class VFFrame(wx.Frame):
         
         # Menu Bar
         self.MainFrame_menubar = wx.MenuBar()
+        
         wxglade_tmp_menu = wx.Menu()
         self.menu_load_id = wx.NewId()
         wxglade_tmp_menu.Append(self.menu_load_id, "Open", "", wx.ITEM_NORMAL)
@@ -180,10 +181,13 @@ class VFFrame(wx.Frame):
         self.menu_exit = wx.NewId()
         wxglade_tmp_menu.Append(self.menu_exit, "Exit", "", wx.ITEM_NORMAL)
         self.MainFrame_menubar.Append(wxglade_tmp_menu, "File")
+        
         wxglade_tmp_menu = wx.Menu()
         self.menu_compwindow_id = wx.NewId()
         wxglade_tmp_menu.Append(self.menu_compwindow_id, "Computational Window", "", wx.ITEM_NORMAL)
-        wxglade_tmp_menu.Append(wx.NewId(), "Preferences", "", wx.ITEM_NORMAL)
+        self.menu_centralwavelength_id = wx.NewId()
+        wxglade_tmp_menu.Append(self.menu_centralwavelength_id, "Central Wavelength", "", wx.ITEM_NORMAL)
+
         self.MainFrame_menubar.Append(wxglade_tmp_menu, "Options")
         wxglade_tmp_menu = wx.Menu()
         self.menu_exportplots_id = wx.NewId()
@@ -191,6 +195,7 @@ class VFFrame(wx.Frame):
         self.menu_exportdata_id = wx.NewId()
         wxglade_tmp_menu.Append(self.menu_exportdata_id, "Export Data", "", wx.ITEM_NORMAL)
         self.MainFrame_menubar.Append(wxglade_tmp_menu, "Export")
+        
         wxglade_tmp_menu = wx.Menu()
         self.MainFrame_menubar.Append(wxglade_tmp_menu, "About")
         self.SetMenuBar(self.MainFrame_menubar)
@@ -218,6 +223,7 @@ class VFFrame(wx.Frame):
         self.__do_layout()
         
         self.Bind(wx.EVT_MENU, self.menu_computational_window_click, id=self.menu_compwindow_id)
+        self.Bind(wx.EVT_MENU, self.menu_central_wavelength_click, id=self.menu_centralwavelength_id)
         self.Bind(wx.EVT_MENU, self.menu_open_click, id=self.menu_load_id)
         self.Bind(wx.EVT_MENU, self.menu_save_click, id=self.menu_save_id)
         self.Bind(wx.EVT_MENU, self.menu_exit_click, id=self.menu_exit)
@@ -338,6 +344,12 @@ class VFFrame(wx.Frame):
         import edit_computationalwindow
         dialog = edit_computationalwindow.EditComputationalWindow(self)
         dialog.set_info(self.NT,self.deltaT,self.propagator.get_pulseBeam().freqZero,self.change_computational_window,self.refresh_everything)
+        dialog.Show()
+        
+    def menu_computational_window_click(self, event):
+        import edit_centralwavelength
+        dialog = edit_centralwavelength.EditCentralWavelength(self)
+        dialog.set_info(self.propagator.get_pulseBeam().freqZero,self.change_computational_window,self.refresh_everything)
         dialog.Show()
         
 

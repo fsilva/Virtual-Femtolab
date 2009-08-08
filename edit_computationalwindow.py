@@ -30,7 +30,6 @@ class EditComputationalWindow(wx.Frame):
         self.__set_properties()
         self.__do_layout()
         
-        #TODO: update spectral resolution with spinctrl event
         self.spin_ctrl_1.Bind(wx.EVT_SPINCTRL, self.change_spin)
         self.spin_ctrl_2.Bind(wx.EVT_SPINCTRL, self.change_spin)
         self.Bind(wx.EVT_BUTTON,   self.refresh_click, self.button_2)
