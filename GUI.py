@@ -55,7 +55,7 @@ class FourPlots(wx.Panel):
 
         self.plot_init = False
 
-    def redraw(self, t_envelope, envelope, electric_field, t_phase, temporal_phase, freq, spectrum, freq_phase, spectral_phase, inter_autoco, inten_autoco, autoco_fft, frog, frog_limits):
+    def redraw(self, t_envelope, envelope, electric_field, t_phase, temporal_phase, wavelength, spectrum, wavelength_phase, spectral_phase, inter_autoco, inten_autoco, autoco_fft, frog, frog_limits):
         if(self.plot_init == False):
             #temporal profile
             self.plot1_line1, = self.plot1.plot(t_envelope, envelope, 'r')
@@ -68,6 +68,8 @@ class FourPlots(wx.Panel):
             self.plot1.set_ylabel('Electric Field(sqrt(Ws^-1))',fontsize='small')
             self.plot1_twinx.set_ylabel('Phase (rad))',fontsize='small')
             
+            self.plot1.ticklabel_format(style='sci', scilimits=(0,0), axis='y')
+            
             if(len(temporal_phase) > 0):
                 max_phase = max(temporal_phase)
                 min_phase = min(temporal_phase)
@@ -76,18 +78,21 @@ class FourPlots(wx.Panel):
                     self.plot1_twinx.set_ylim((-0.09,0.01))
             
             #spectral profile
-            self.plot2_line1, = self.plot2.plot(freq, spectrum, 'g')
+            self.plot2_line1, = self.plot2.plot(wavelength, spectrum, 'g')
             self.plot2_twinx = self.plot2.twinx()
-            self.plot2_line2, = self.plot2_twinx.plot(freq_phase, spectral_phase, 'k')
+            self.plot2_line2, = self.plot2_twinx.plot(wavelength_phase, spectral_phase, 'k')
             
-            self.plot2.set_xlabel('Envelope Frequency(rad s^-1)',fontsize='small')
-            self.plot2.set_ylabel('Intensity (??sqrt(Ws^-1))',fontsize='small')
+            self.plot2.set_xlabel('Wavelength (m)',fontsize='small')
+            self.plot2.set_ylabel('Intensity (Wm^-1))',fontsize='small')
             self.plot2_twinx.set_ylabel('Phase (rad))',fontsize='small')
             
+            self.plot2.ticklabel_format(style='sci', scilimits=(0,0), axis='x')
+            self.plot2_twinx.ticklabel_format(style='sci', scilimits=(0,0), axis='x')
+            
             #autoco
-            self.plot3_line1, = self.plot3.plot(t_envelope, inter_autoco, 'b')
-            self.plot3_line2, = self.plot3.plot(t_envelope, inten_autoco, 'r')            
-            self.plot3.set_xlabel('Delay(s)',fontsize='small')
+            #self.plot3_line1, = self.plot3.plot(t_envelope, inter_autoco, 'b')
+            #self.plot3_line2, = self.plot3.plot(t_envelope, inten_autoco, 'r')            
+            #self.plot3.set_xlabel('Delay(s)',fontsize='small')
 #            self.plot3_twinx = self.plot2.twinx()  #TODO: add autocoFFT
 #            self.plot3_line2, = self.plot2_twinx.plot(autoco_fft, 'k')
 
@@ -102,9 +107,12 @@ class FourPlots(wx.Panel):
             self.plot_init = True
         else:
             #temporal profile
-            self.plot1_line1.set_ydata(envelope)
+            #self.plot1_line1.set_ydata(envelope)
+            self.plot1_line1.set_data(t_envelope,envelope)
+            self.plot1.set_xlim((min(t_envelope),max(t_envelope)))
             if(not electric_field is None):
-                self.plot1_line2.set_ydata(electric_field)
+#                self.plot1_line2.set_ydata(electric_field)
+                self.plot1_line2.set_data(t_envelope,electric_field)
                 self.plot1.set_ylim((min(electric_field),max(envelope)))
             else:
                 self.plot1.set_ylim((min(envelope),max(envelope)))
@@ -119,9 +127,10 @@ class FourPlots(wx.Panel):
                 self.plot1_twinx.set_ylim((min_phase-delta/10.,max_phase+delta/10.))
             
             #spectral profile
-            self.plot2_line1.set_ydata(spectrum)
+            #self.plot2_line1.set_ydata(spectrum)
+            self.plot2_line1.set_data(wavelength,spectrum)
             self.plot2.set_ylim((min(spectrum),max(spectrum)))
-            self.plot2_line2.set_data(freq_phase,spectral_phase)
+            self.plot2_line2.set_data(wavelength_phase,spectral_phase)
             
             if(len(spectral_phase) != 0):
                 max_phase = max(spectral_phase)
@@ -130,8 +139,8 @@ class FourPlots(wx.Panel):
                 self.plot2_twinx.set_ylim((min_phase-delta/10.,max_phase+delta/10.))
             
             #Autoco
-            self.plot3_line1.set_ydata(inter_autoco)
-            self.plot3_line2.set_ydata(inten_autoco)
+            #self.plot3_line1.set_ydata(inter_autoco)
+            #self.plot3_line2.set_ydata(inten_autoco)
             #TODO: add autocofft
             #SHG FROG
             self.plot4_imshow.set_data(frog)
@@ -409,9 +418,10 @@ class VFFrame(wx.Frame):
         
     def init_calculations(self):
         #TODO: move this into a separate config file
-        self.NT = 1024
+        self.NT = 64
         self.deltaT = 64.e-15
         self.lambdaZero = 8.0e-7
+        self.wavelength_limit = 1.6e-6
         self.propagator = propagator.Propagator(self.NT,self.deltaT,self.lambdaZero)
         self.propagator.example_pulseBeam()
         self.propagator.example_elements()
@@ -452,25 +462,30 @@ class VFFrame(wx.Frame):
         pulseBeam = self.propagator.get_pulseBeam()
         
         t = pulseBeam.get_t()
+        
         envelope = pulseBeam.get_temporal_envelope()
         electric_field = pulseBeam.get_real_electric_field()
-        
-        t_phase = t[:]
         temporal_phase = pulseBeam.get_temporal_phase()
-        t_phase,temporal_phase = pulseBeam.phase_blank(t_phase,envelope,temporal_phase,1e-2)
+        
+        t_phase,temporal_phase = pulseBeam.phase_blank(t,envelope,temporal_phase,1e-2)
+        if(not electric_field is None):
+            t_field,electric_field = pulseBeam.phase_blank(t,envelope,electric_field,1e-3)        
+        t_field,envelope = pulseBeam.phase_blank(t,envelope,envelope,1e-3)
+        
+        
 
         
-        freq = pulseBeam.get_frequencies()
-        spectrum = pulseBeam.get_spectral_intensity()
+        spectrum,spectral_phase,freq = pulseBeam.get_spectral_intensity_and_phase_vs_wavelength(self.wavelength_limit)
+        #spectrum = pulseBeam.get_spectral_intensity()
         
         freq_phase = freq[:]
-        spectral_phase = pulseBeam.get_spectral_phase()
+        #spectral_phase = pulseBeam.get_spectral_phase()
         freq_phase,spectral_phase = pulseBeam.phase_blank(freq_phase,spectrum,spectral_phase,1e-2)
         
         inter_autoco     = pulseBeam.get_interferometric_autoco()
         inten_autoco     = pulseBeam.get_intensiometric_autoco()
         frog, frog_limits = pulseBeam.get_SHGFROG()
-        self.plot.redraw(t,envelope,electric_field,t_phase,temporal_phase,freq,spectrum,freq_phase,spectral_phase,inter_autoco,inten_autoco,0,frog,frog_limits)
+        self.plot.redraw(t_field,envelope,electric_field,t_phase,temporal_phase,freq,spectrum,freq_phase,spectral_phase,inter_autoco,inten_autoco,0,frog,frog_limits)
         
         
         

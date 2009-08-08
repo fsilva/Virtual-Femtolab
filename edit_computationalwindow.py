@@ -21,7 +21,7 @@ class EditComputationalWindow(wx.Frame):
         self.label_21 = wx.StaticText(self, -1, "Temporal Width (fs)")
         self.spin_ctrl_2 = wx.SpinCtrl(self, -1, "128", min=0, max=100000)
          
-        self.label_31 = wx.StaticText(self, -1, "Spectral Resolution\n@ central frequency)")
+        self.label_31 = wx.StaticText(self, -1, "Spectral Resolution\n@ central frequency")
         self.label_32 = wx.StaticText(self, -1, " nm")
         
         self.button_2 = wx.Button(self, -1, "Refresh")

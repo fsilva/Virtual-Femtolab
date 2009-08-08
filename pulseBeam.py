@@ -505,10 +505,20 @@ class pulseBeam:
     
     def get_spectral_intensity(self):
         return abs(roll(self.Spectrum,self.NT/2))**2
-
+    
     def get_spectral_phase(self):
         phase = unwrap(angle(roll(self.Spectrum,self.NT/2))) #TODO: should we multiply by 2, because of intensity? (**2)
         return phase - phase[self.NT/2]
+        
+    def get_spectral_intensity_and_phase_vs_wavelength(self,wavelength_limit):
+        intensity = self.get_spectral_intensity()
+        phase = self.get_spectral_phase()
+        wavelengths = roll(self.wavelengths,self.NT/2)
+        i = 0
+        while(wavelengths[i] <= 0 or wavelengths[i] > wavelength_limit and i < self.NT): #TODO: relate 2000e-9 to the central wavelength
+            i += 1 
+
+        return intensity[i:],phase[i:] ,wavelengths[i:]       
         
     def get_interferometric_autoco(self):
         return self.InterferometricAutoCo
@@ -527,16 +537,17 @@ class pulseBeam:
         self.FROG = zeros((self.NT,self.NT))
         
     def phase_blank(self,t,data_array,phase_array,threshold): #TODO: speed this up, perhaps
+        length = len(t) 
         absarray = abs(data_array)
         absarray /= max(absarray) 
         i = 0
-        while(i < self.NT and absarray[i] < threshold):
+        while(i < length and absarray[i] < threshold):
             i += 1
         
-        if(i == self.NT):
+        if(i == length):
             return #no information here
         
-        j = self.NT-1
+        j = length-1
         
         while(j >= 0 and absarray[j] < threshold):
             j -= 1
