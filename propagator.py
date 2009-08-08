@@ -5,8 +5,8 @@ import pulseBeam
 
 import element_propagation
 import element_thinlens
-import element_chirpedmirror
-import element_filter
+#import element_chirpedmirror
+#import element_filter
 
 class Propagator:
     def __init__(self,NT,deltaT,lambdaZero):
