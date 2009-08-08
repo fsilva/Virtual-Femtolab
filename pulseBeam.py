@@ -348,10 +348,10 @@ class pulseBeam:
         
         
     def calculate_autoco(self):
-    #calculates 3 things:
+    #calculates 2 things:
     #   -interferometric autoco (if sampling rate is sufficient)
     #   -intensiometric autoco
-    #   -interferometric autoco FFT (if sampling rate is sufficient) #TODO
+
     
     #interferometric autoco calculation from Joao Silva
         E = self.get_real_electric_field()
@@ -426,8 +426,31 @@ class pulseBeam:
         self.FROG /= ma.max(abs(self.FROG))
         
         
-    def calculate_fwhm(self): # return two approximations to FWHM
-    
+        
+    def fwhm_helper(self,envelope):
+        max_envelope = max(envelope)
+        i = 0
+        
+        
+        #find first intersection
+        while(envelope[i] < max_envelope/2. and i < len(envelope)):
+           i+=1
+        #interpolate
+    #    i_ = i+(envelope[i-1]-max_envelope/2.)/(envelope[i]-envelope[i-1])
+        i_ = i+(max_envelope/2.-envelope[i])/(envelope[i+1]-envelope[i])
+           
+           
+        #find second intersection
+        j = len(envelope)-1
+        while(envelope[j] < max_envelope/2. and j > 0):
+           j -= 1
+        #interpolate
+        #j_ = j+(envelope[j]-max_envelope/2.)/(envelope[j]-envelope[j+1])
+        j_ = j+(max_envelope/2.-envelope[j])/(envelope[j+1]-envelope[j])
+        
+        return j_-i_
+        
+    def get_temporal_fwhm(self): # return two approximations to FWHM
         #calculate intensity envelope
         envelope = abs(self.ElectricField[:])**2
         
@@ -437,50 +460,15 @@ class pulseBeam:
         width = sqrt(abs(sum((X-x)**2*envelope)/sum(envelope)))
         fwhm1 = 2.35*width*self.deltaT/self.NT
         
-        #TODO: speed this up and refactor, same code in next function
-        #calculate FWHM by finding the half maximum level intersections
-        max_envelope = max(envelope)
-        i = 0
-        #find first intersection
-        while(envelope[i] < max_envelope/2. and i < len(envelope)):
-           i+=1
-        #interpolate
-        i_ = i+(envelope[i-1]-max_envelope/2.)/(envelope[i]-envelope[i-1])
-           
-        #find second intersection
-        j = len(envelope)-1
-        while(envelope[j] < max_envelope/2. and j > 0):
-           j -= 1
-        #interpolate
-        j_ = j+(envelope[j]-max_envelope/2.)/(envelope[j+1]-envelope[j])
-        
-        fwhm2 = (j_-i_)*self.deltaT/self.NT
+        #calculate FWHM by iteractively checking for intersections at max/2
+        fwhm2 = self.fwhm_helper(envelope)*self.deltaT/self.NT
         
         return fwhm1,fwhm2
         
-    def get_spectral_fwhm(self): #TODO: speed this up and refactor with previous function
-        #calculate FWHM by finding the half maximum level intersections
+    def get_spectral_fwhm(self): 
         envelope = self.get_spectral_intensity()
-        max_envelope = max(envelope)
         
-        i = 0
-        #find first intersection
-        while(envelope[i] < max_envelope/2. and i < len(envelope)):
-           i+=1
-        #interpolate
-        i_ = i+(envelope[i-1]-max_envelope/2.)/(envelope[i]-envelope[i-1])
-           
-        #find second intersection
-        j = len(envelope)-1
-        while(envelope[j] < max_envelope/2. and j > 0):
-           j -= 1
-        #interpolate
-        j_ = j+(envelope[j]-max_envelope/2.)/(envelope[j]-envelope[j+1])
-        
-        fwhm = (j_-i_)/self.deltaT 
-        
-        #print i,j,i_,j_,j_-i_,fwhm,envelope[i]/max_envelope,envelope[j]/max_envelope
-        
+        fwhm = self.fwhm_helper(envelope)/self.deltaT 
         
         fwhm = 3e8/self.freqZero**2*fwhm
         
@@ -534,7 +522,7 @@ class pulseBeam:
         return abs(roll(self.Spectrum,self.NT/2))**2
     
     def get_spectral_phase(self):
-        phase = unwrap(angle(roll(self.Spectrum,self.NT/2))) #TODO: should we multiply by 2, because of intensity? (**2)
+        phase = unwrap(angle(roll(self.Spectrum,self.NT/2))) 
         return phase - phase[self.NT/2]
         
     def get_spectral_intensity_and_phase_vs_wavelength(self,wavelength_limit):
@@ -542,7 +530,7 @@ class pulseBeam:
         phase = self.get_spectral_phase()
         wavelengths = roll(self.wavelengths,self.NT/2)
         i = 0
-        while(wavelengths[i] <= 0 or wavelengths[i] > wavelength_limit and i < self.NT): #TODO: relate 2000e-9 to the central wavelength
+        while(wavelengths[i] <= 0 or wavelengths[i] > wavelength_limit and i < self.NT): 
             i += 1 
 
         return intensity[i:],phase[i:] ,wavelengths[i:]       

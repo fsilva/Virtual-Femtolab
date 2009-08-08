@@ -450,9 +450,9 @@ class VFFrame(wx.Frame):
         pulseBeam = self.propagator.get_pulseBeam()
         self.VFData.SetCellValue(0,1,'%d'%pulseBeam.NT)
         self.VFData.SetCellValue(1,1,'%3.1f'%(pulseBeam.deltaT*1e15))
-        fwhm1,fwhm2 = pulseBeam.calculate_fwhm()
-        self.VFData.SetCellValue(2,1,'%3.3f'%(fwhm1*1e15))
-        self.VFData.SetCellValue(3,1,'%3.3f'%(fwhm2*1e15))
+        fwhm1,fwhm2 = pulseBeam.get_temporal_fwhm()
+        self.VFData.SetCellValue(2,1,'%3.3f'%(fwhm2*1e15))
+        self.VFData.SetCellValue(3,1,'%3.3f'%(fwhm1*1e15))
         self.VFData.SetCellValue(4,1,'%3.3f'%(pulseBeam.get_spectral_fwhm()*1e9))
         spot = pulseBeam.get_beam_spot()
         if(spot < 1e-3):
@@ -553,7 +553,7 @@ class VFFrame(wx.Frame):
             x = 5-self.distance/self.propagator.get_max_z()*(total_width-available_width)
         
         ipb = self.propagator.get_initialPulseBeam()
-        tmp,t_fwhm = ipb.calculate_fwhm() #function naming inconstitent, change! TODO TODO
+        tmp,t_fwhm = ipb.get_temporal_fwhm() 
         f_fwhm  = ipb.get_spectral_fwhm()
         text = '%.1f fs\n%.1f nm'%(t_fwhm*1e15,f_fwhm*1e9)
         
