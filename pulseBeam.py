@@ -536,6 +536,7 @@ class pulseBeam:
     def recreate_frog(self):
         self.FROG = zeros((self.NT,self.NT))
         
+        
     def phase_blank(self,t,data_array,phase_array,threshold): #TODO: speed this up, perhaps
         length = len(t) 
         absarray = abs(data_array)

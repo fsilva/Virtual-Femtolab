@@ -55,7 +55,7 @@ class FourPlots(wx.Panel):
 
         self.plot_init = False
 
-    def redraw(self, t_envelope, envelope, electric_field, t_phase, temporal_phase, wavelength, spectrum, wavelength_phase, spectral_phase, inter_autoco, inten_autoco, autoco_fft, frog, frog_limits):
+    def redraw(self, t_envelope, envelope, electric_field, t_phase, temporal_phase, wavelength, spectrum, wavelength_phase, spectral_phase, t_autoco, inter_autoco, inten_autoco, frog, frog_limits):
         if(self.plot_init == False):
             #temporal profile
             self.plot1_line1, = self.plot1.plot(t_envelope, envelope, 'r')
@@ -90,9 +90,9 @@ class FourPlots(wx.Panel):
             self.plot2_twinx.ticklabel_format(style='sci', scilimits=(0,0), axis='x')
             
             #autoco
-            #self.plot3_line1, = self.plot3.plot(t_envelope, inter_autoco, 'b')
-            #self.plot3_line2, = self.plot3.plot(t_envelope, inten_autoco, 'r')            
-            #self.plot3.set_xlabel('Delay(s)',fontsize='small')
+            self.plot3_line1, = self.plot3.plot(t_autoco, inter_autoco, 'b')
+            self.plot3_line2, = self.plot3.plot(t_autoco, inten_autoco, 'r')            
+            self.plot3.set_xlabel('Delay(s)',fontsize='small')
 #            self.plot3_twinx = self.plot2.twinx()  #TODO: add autocoFFT
 #            self.plot3_line2, = self.plot2_twinx.plot(autoco_fft, 'k')
 
@@ -139,8 +139,9 @@ class FourPlots(wx.Panel):
                 self.plot2_twinx.set_ylim((min_phase-delta/10.,max_phase+delta/10.))
             
             #Autoco
-            #self.plot3_line1.set_ydata(inter_autoco)
-            #self.plot3_line2.set_ydata(inten_autoco)
+            self.plot3.set_xlim((min(t_autoco),max(t_autoco)))
+            self.plot3_line1.set_data(t_autoco,inter_autoco)
+            self.plot3_line2.set_data(t_autoco,inten_autoco)
             #TODO: add autocofft
             #SHG FROG
             self.plot4_imshow.set_data(frog)
@@ -467,13 +468,13 @@ class VFFrame(wx.Frame):
         electric_field = pulseBeam.get_real_electric_field()
         temporal_phase = pulseBeam.get_temporal_phase()
         
+        #the function is called phase_blank but we are using it here to remove the 
+        # ~0 parts of the waveforms
+        
         t_phase,temporal_phase = pulseBeam.phase_blank(t,envelope,temporal_phase,1e-2)
         if(not electric_field is None):
             t_field,electric_field = pulseBeam.phase_blank(t,envelope,electric_field,1e-3)        
         t_field,envelope = pulseBeam.phase_blank(t,envelope,envelope,1e-3)
-        
-        
-
         
         spectrum,spectral_phase,freq = pulseBeam.get_spectral_intensity_and_phase_vs_wavelength(self.wavelength_limit)
         #spectrum = pulseBeam.get_spectral_intensity()
@@ -484,8 +485,12 @@ class VFFrame(wx.Frame):
         
         inter_autoco     = pulseBeam.get_interferometric_autoco()
         inten_autoco     = pulseBeam.get_intensiometric_autoco()
+
+        t_autoco,inter_autoco = pulseBeam.phase_blank(t,inten_autoco-1,inter_autoco,1e-3)
+        t_autoco,inten_autoco = pulseBeam.phase_blank(t,inten_autoco-1,inten_autoco,1e-3)
+        
         frog, frog_limits = pulseBeam.get_SHGFROG()
-        self.plot.redraw(t_field,envelope,electric_field,t_phase,temporal_phase,freq,spectrum,freq_phase,spectral_phase,inter_autoco,inten_autoco,0,frog,frog_limits)
+        self.plot.redraw(t_field,envelope,electric_field,t_phase,temporal_phase,freq,spectrum,freq_phase,spectral_phase,t_autoco,inter_autoco,inten_autoco,frog,frog_limits)
         
         
         
