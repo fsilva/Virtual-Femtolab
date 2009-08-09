@@ -35,6 +35,8 @@ class pulseBeam:
         self.initialFOD            = 0
         self.initialTemporalFWHM = 0
         self.initialSpectralFWHM = 0
+        self.initialPulseShapeLoader = None
+        self.initialSpectralShapeLoader = None
         
     def copy(self,pulseBeam):
         self.ElectricField[:]     = pulseBeam.ElectricField[:]
@@ -64,6 +66,9 @@ class pulseBeam:
         
         self.initialTemporalFWHM = pulseBeam.initialTemporalFWHM
         self.initialSpectralFWHM = pulseBeam.initialSpectralFWHM
+        
+        self.initialPulseShapeLoader = pulseBeam.initialPulseShapeLoader
+        self.initialSpectralShapeLoader = pulseBeam.initialSpectralShapeLoader
         
         self.energy = pulseBeam.energy
         self.peak_power = pulseBeam.peak_power
@@ -165,7 +170,38 @@ class pulseBeam:
         self.field_to_spectrum()
         self.apply_dispersion(GVD,TOD,FOD)
         self.spectrum_to_field()
-   
+        
+
+
+
+    def initialize_load_envelope(self, loader, GVD, TOD, FOD, spot, curvature, peak_power, energy, rate):   
+        self.BeamProfile_spot = spot
+        self.BeamProfile_curvature = curvature 
+        self.energy = energy
+        self.peak_power = peak_power
+        self.rate = rate
+
+        self.initialGVD = GVD
+        self.initialTOD = TOD 
+        self.initialFOD = FOD
+
+        self.initialTemporalFWHM = 0
+        self.initialSpectralFWHM = 0
+
+        
+        loader.detect_time_scale()
+        
+        self.ElectricField[:]   = loader.get_data_for_x_series(self.t)
+        
+        print self.ElectricField
+        
+        self.rescale_field_to_energy_or_peak_power()
+        
+        self.field_to_spectrum()
+        self.apply_dispersion(GVD,TOD,FOD)
+        self.spectrum_to_field()
+        
+        
         
         
     
@@ -182,7 +218,6 @@ class pulseBeam:
         
         self.initialTemporalFWHM = 0
         self.initialSpectralFWHM = spectralfwhm
-        print 'maybe this is wrong. initialize_spectrum at pulsebeam'
         
         deltaFreq = 3e8/self.lambdaZero**2*spectralfwhm/2.35*2
         
@@ -201,33 +236,38 @@ class pulseBeam:
         
         
         
-    def initialize_spectrum_loaded(self, loader, phaseloader, GVD, TOD,FOD, spot,curvature, peak_power, energy, rate):  
+    def initialize_load_spectrum(self, loader, GVD, TOD, FOD, spot, curvature, peak_power, energy, rate):   
         self.BeamProfile_spot = spot
         self.BeamProfile_curvature = curvature 
         self.energy = energy
         self.peak_power = peak_power
         self.rate = rate
-        
+
         self.initialGVD = GVD
         self.initialTOD = TOD 
         self.initialFOD = FOD
 
-        freq = self.frequencies
-        lambdas = 3e8/freq
-        spec = loader.get_data_for_wavelengths(lambdas)
-        spec /= max(spec)
+        self.initialTemporalFWHM = 0
+        self.initialSpectralFWHM = 0
 
-        if(phaseloader is None):
-            phase = zeros((len(self.Spectrum)))
-        else:
-            phase = phaseloader.get_data_for_wavelengths(lambdas)
+        wavelengths = self.wavelengths[:]
+
+    
+        loader.detect_wavelength_scale()
         
-        self.Spectrum[:] = spec*exp(1j*phase/2.)
-            
+        self.FFT[:] = sqrt(loader.get_data_for_x_series(wavelengths[:]))
+        
         self.apply_dispersion(GVD,TOD,FOD) 
         self.spectrum_to_field()
-        
+
+        #field is shifted due to fft, shift it back
+        self.ElectricField = fftshift(self.ElectricField)
+
         self.rescale_field_to_energy_or_peak_power()
+    
+        
+        
+        
         
         
     def rescale_field_to_energy_or_peak_power(self):
@@ -427,27 +467,29 @@ class pulseBeam:
         
         
         
-    def fwhm_helper(self,envelope):
+    def fwhm_helper(self,envelope,divisor):
         max_envelope = max(envelope)
         i = 0
         
         
         #find first intersection
-        while(envelope[i] < max_envelope/2. and i < len(envelope)):
+        while(envelope[i] < max_envelope/divisor and i < len(envelope)):
            i+=1
         #interpolate
     #    i_ = i+(envelope[i-1]-max_envelope/2.)/(envelope[i]-envelope[i-1])
-        i_ = i+(max_envelope/2.-envelope[i])/(envelope[i+1]-envelope[i])
+        i_ = i+(max_envelope/divisor-envelope[i])/(envelope[i+1]-envelope[i])
            
            
         #find second intersection
         j = len(envelope)-1
-        while(envelope[j] < max_envelope/2. and j > 0):
+        while(envelope[j] < max_envelope/divisor and j > 0):
            j -= 1
         #interpolate
         #j_ = j+(envelope[j]-max_envelope/2.)/(envelope[j]-envelope[j+1])
-        j_ = j+(max_envelope/2.-envelope[j])/(envelope[j+1]-envelope[j])
+        j_ = j+(max_envelope/divisor-envelope[j])/(envelope[j+1]-envelope[j])
         
+        if(j_-i_ < 0):
+            return 0 #strangely, this happens with very odd spectral shapes 
         return j_-i_
         
     def get_temporal_fwhm(self): # return two approximations to FWHM
@@ -461,18 +503,27 @@ class pulseBeam:
         fwhm1 = 2.35*width*self.deltaT/self.NT
         
         #calculate FWHM by iteractively checking for intersections at max/2
-        fwhm2 = self.fwhm_helper(envelope)*self.deltaT/self.NT
+        fwhm2 = self.fwhm_helper(envelope,2)*self.deltaT/self.NT
         
         return fwhm1,fwhm2
         
     def get_spectral_fwhm(self): 
         envelope = self.get_spectral_intensity()
         
-        fwhm = self.fwhm_helper(envelope)/self.deltaT 
+        fwhm = self.fwhm_helper(envelope,2)/self.deltaT 
         
         fwhm = 3e8/self.freqZero**2*fwhm
         
         return fwhm
+        
+    def get_spectral_width(self): 
+        envelope = self.get_spectral_intensity()
+
+        width = self.fwhm_helper(envelope,2.718*2.718)/self.deltaT 
+
+        width *= 3e8/self.freqZero**2
+
+        return width
         
         
     def calc_energy(self):

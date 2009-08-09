@@ -4,6 +4,7 @@
 
 import wx
 from math import sqrt
+import csv_utils
 
 # begin wxGlade: extracode
 # end wxGlade
@@ -26,7 +27,7 @@ class EditInitialPulse(wx.Frame):
         self.radio_btn_2 = wx.RadioButton(self.notebook_1_pane_1, -1, "Spectral FWHM")
         self.spectralFWHM = wx.TextCtrl(self.notebook_1_pane_1, -1, "200", style=wx.TE_RIGHT)
         self.label_3 = wx.StaticText(self.notebook_1_pane_1, -1, "nm")
-        self.radio_btn_3 = wx.RadioButton(self.notebook_1_pane_1, -1, "Load Electric Field")
+        self.radio_btn_3 = wx.RadioButton(self.notebook_1_pane_1, -1, "Load Electric Field Envelope")
         self.radio_btn_4 = wx.RadioButton(self.notebook_1_pane_1, -1, "Load Spectrum")
         self.label_13 = wx.StaticText(self.notebook_1_pane_2, -1, "GVD")
         self.gvd = wx.TextCtrl(self.notebook_1_pane_2, -1, "0.0", style=wx.TE_RIGHT)
@@ -64,7 +65,7 @@ class EditInitialPulse(wx.Frame):
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(wx.EVT_RADIOBUTTON, self.load_electric_field, self.radio_btn_3)
+        self.Bind(wx.EVT_RADIOBUTTON, self.load_electric_field_envelope, self.radio_btn_3)
         self.Bind(wx.EVT_RADIOBUTTON, self.load_spectrum, self.radio_btn_4)
         self.Bind(wx.EVT_BUTTON, self.refresh_click, self.button_1)
         self.Bind(wx.EVT_BUTTON, self.done_click, self.button_2)
@@ -217,17 +218,55 @@ class EditInitialPulse(wx.Frame):
         self.waist_distance.SetLabel('%3.3e'%waist_z)
         self.spot_waist.SetLabel('%3.3e'%(waist_0*1000)) #in mm
 
-            
 
-    def load_electric_field(self, event): # wxGlade: EditInitialPulse.<event_handler>
-        print "Event handler `load_electric_field' not implemented!"
+    def load_electric_field_envelope(self, event): # wxGlade: EditInitialPulse.<event_handler>
+        dialog = wx.MessageDialog(None, 'The expected file format is 2 columns: time and electric field envelope. They can be separated by space, comma or tab. The decimal separator must be a point. Time can be in seconds or femtoseconds.', 'File Format', 
+                    wx.OK | wx.NO_DEFAULT | wx.ICON_INFORMATION)
+        dialog.ShowModal()
+    
+        dialog = wx.FileDialog(self,'Choose file to load electric field envelope','./','','All Files (*.*)|*.*',wx.FD_CHANGE_DIR)
+        if(dialog.ShowModal() == wx.ID_OK):
+            self.envelope_filename = dialog.GetPath()
+        else:
+            self.radio_btn_1.SetValue(1)
+            self.radio_btn_3.SetValue(0)
+            
         event.Skip()
 
+
     def load_spectrum(self, event): # wxGlade: EditInitialPulse.<event_handler>
-        print "Event handler `load_spectrum' not implemented!"
+        dialog = wx.MessageDialog(None, 'The expected file format is 2 columns: wavelength and spectral intensity. They can be separated by space, comma or tab. The decimal separator must be a point. The wavelength can be in nm or meters.', 'File Format', 
+                    wx.OK | wx.NO_DEFAULT | wx.ICON_INFORMATION)
+        dialog.ShowModal()
+    
+        dialog = wx.FileDialog(self,'Choose file to load spectrum','./','','All Files (*.*)|*.*',wx.FD_CHANGE_DIR)
+        if(dialog.ShowModal() == wx.ID_OK):
+            self.spectrum_filename = dialog.GetPath()
+        else:
+            self.radio_btn_1.SetValue(1)
+            self.radio_btn_4.SetValue(0)
         event.Skip()
 
     def refresh_click(self, event): # wxGlade: EditInitialPulse.<event_handler>
+        # if we are loading from files test to see if they are valid before doing anything. if not valid fail graciously
+        from csv import Error as csvError
+        if(self.radio_btn_3.GetValue()==1): #load pulse shape
+            loader = csv_utils.csv_loader(self.envelope_filename)
+            try:
+                loader = csv_utils.csv_loader(self.envelope_filename)
+            except(csvError): #error loading the file
+                 dialog = wx.MessageDialog(None, 'Error loading selected file. File format not recognized.', 'File Format', wx.OK | wx.NO_DEFAULT | wx.ICON_INFORMATION)
+                 dialog.ShowModal()
+                 return
+                 
+        elif(self.radio_btn_4.GetValue()==1): #load spectrum
+            try:
+                loader = csv_utils.csv_loader(self.spectrum_filename)
+            except(csvError): #error loading the file
+                 dialog = wx.MessageDialog(None, 'Error loading selected file. File format not recognized.', 'File Format', wx.OK | wx.NO_DEFAULT | wx.ICON_INFORMATION)
+                 dialog.ShowModal()
+                 return
+    
         
         #energy 
         try:
@@ -287,9 +326,8 @@ class EditInitialPulse(wx.Frame):
                                                        self.initialPulseBeam.rate)
             except:
                 self.temporalFWHM.SetValue(str(self.initialPulseBeam.initialTemporalFWHM*1e15))
-        elif(self.radio_btn_2.GetValue()==1):
+        elif(self.radio_btn_2.GetValue()==1): #spectral fwhm
             try:
-                print 'yeah'
                 self.initialPulseBeam.initialSpectralFWHM = float(self.spectralFWHM.GetValue())*1e-9
                 self.initialPulseBeam.initialize_spectrum(self.initialPulseBeam.initialSpectralFWHM,
                                                        self.initialPulseBeam.initialGVD,
@@ -302,8 +340,34 @@ class EditInitialPulse(wx.Frame):
                                                        self.initialPulseBeam.rate)
             except:
                 self.spectralFWHM.SetValue(str(self.initialPulseBeam.initialSpectralFWHM*1e9)) 
-        else:
-            pass
+        elif(self.radio_btn_3.GetValue()==1): #load pulse shape
+            self.initialPulseBeam.initialSpectralFWHM = 0
+            self.initialPulseBeam.initialTemporalFWHM = 0
+            
+            self.initialPulseBeam.initialize_load_envelope(loader,
+                                            self.initialPulseBeam.initialGVD,
+                                            self.initialPulseBeam.initialTOD,
+                                            self.initialPulseBeam.initialFOD,
+                                            self.initialPulseBeam.BeamProfile_spot,
+                                            self.initialPulseBeam.BeamProfile_curvature,
+                                            self.initialPulseBeam.peak_power,
+                                            self.initialPulseBeam.energy,
+                                            self.initialPulseBeam.rate)
+            
+        elif(self.radio_btn_4.GetValue()==1): #load spectrum
+            self.initialPulseBeam.initialSpectralFWHM = 0
+            self.initialPulseBeam.initialTemporalFWHM = 0  
+            
+            self.initialPulseBeam.initialize_load_spectrum(loader,
+                                            self.initialPulseBeam.initialGVD,
+                                            self.initialPulseBeam.initialTOD,
+                                            self.initialPulseBeam.initialFOD,
+                                            self.initialPulseBeam.BeamProfile_spot,
+                                            self.initialPulseBeam.BeamProfile_curvature,
+                                            self.initialPulseBeam.peak_power,
+                                            self.initialPulseBeam.energy,
+                                            self.initialPulseBeam.rate)
+                      
             
             
                

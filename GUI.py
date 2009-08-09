@@ -117,7 +117,7 @@ class VFFrame(wx.Frame):
         # begin wxGlade: VFFrame.__set_properties
         self.SetTitle("Virtual Femtolab")
         self.SetSize((900,675))
-        self.VFData.CreateGrid(13, 3)
+        self.VFData.CreateGrid(14, 3)
         self.VFData.SetRowLabelSize(0)
         self.VFData.SetColLabelSize(0)
         self.VFData.EnableEditing(0)
@@ -176,22 +176,24 @@ class VFFrame(wx.Frame):
         self.VFData.SetCellValue(3,2,'fs')        
         self.VFData.SetCellValue(4,0,'Spectral FWHM')
         self.VFData.SetCellValue(4,2,'nm')
-        self.VFData.SetCellValue(5,0,'Beam Spot')
-        self.VFData.SetCellValue(5,2,'mm')
-        self.VFData.SetCellValue(6,0,'Beam Curvature')
-        self.VFData.SetCellValue(6,2,'m')
-        self.VFData.SetCellValue(7,0,'Peak Power')
-        self.VFData.SetCellValue(7,2,'W')
-        self.VFData.SetCellValue(8,0,'Peak Intensity')
-        self.VFData.SetCellValue(8,2,'Wm^-2')
-        self.VFData.SetCellValue(9,0,'Pulse Energy')
-        self.VFData.SetCellValue(9,2,'J')
-        self.VFData.SetCellValue(10,0,'Rep. Rate')
-        self.VFData.SetCellValue(10,2,'MHz')
-        self.VFData.SetCellValue(11,0,'CW Power')
-        self.VFData.SetCellValue(11,2,'W')
-        self.VFData.SetCellValue(12,0,'z')
-        self.VFData.SetCellValue(12,2,'m')
+        self.VFData.SetCellValue(5,0,'Spectral Width(1/e^2)')
+        self.VFData.SetCellValue(5,2,'nm')
+        self.VFData.SetCellValue(6,0,'Beam Spot')
+        self.VFData.SetCellValue(6,2,'mm')
+        self.VFData.SetCellValue(7,0,'Beam Curvature')
+        self.VFData.SetCellValue(7,2,'m')
+        self.VFData.SetCellValue(8,0,'Peak Power')
+        self.VFData.SetCellValue(8,2,'W')
+        self.VFData.SetCellValue(9,0,'Peak Intensity')
+        self.VFData.SetCellValue(9,2,'Wm^-2')
+        self.VFData.SetCellValue(10,0,'Pulse Energy')
+        self.VFData.SetCellValue(10,2,'J')
+        self.VFData.SetCellValue(11,0,'Rep. Rate')
+        self.VFData.SetCellValue(11,2,'MHz')
+        self.VFData.SetCellValue(12,0,'CW Power')
+        self.VFData.SetCellValue(12,2,'W')
+        self.VFData.SetCellValue(13,0,'z')
+        self.VFData.SetCellValue(13,2,'m')
                 
         
         
@@ -205,7 +207,7 @@ class VFFrame(wx.Frame):
     def menu_open_click(self, event): # wxGlade: VFFrame.<event_handler>
         dialog = wx.FileDialog(self,'Choose file to load state','./','state','Virtual Femtolab Setup(*.fs)|*.fs| All Files (*.*)|*.*',wx.FD_CHANGE_DIR)
         if(dialog.ShowModal() == wx.ID_OK):
-            filename = dialog.GetFilename()
+            filename = dialog.GetPath()
             infile = open(filename, 'rb')
             self.propagator = pickle.load(infile)
             infile.close()
@@ -218,7 +220,7 @@ class VFFrame(wx.Frame):
     def menu_save_click(self, event): # wxGlade: VFFrame.<event_handler>
         dialog = wx.FileDialog(self,'Choose file to save current state','./','state','Virtual Femtolab Setup|*.fs',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR)
         if(dialog.ShowModal() == wx.ID_OK):
-            filename = dialog.GetFilename()
+            filename = dialog.GetPath()
             if(filename[-3:] != '.fs'):
                 filename = filename + '.fs'
             outfile = open(filename, 'wb')
@@ -240,7 +242,7 @@ class VFFrame(wx.Frame):
     def menu_exportdata_click(self, event): # wxGlade: VFFrame.<event_handler>
         dialog = wx.FileDialog(self,'Choose file prefix to save data','./','data','No extension. Data will be saved in various csv files.|*.',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR)
         if(dialog.ShowModal() == wx.ID_OK):
-            filename = dialog.GetFilename()
+            filename = dialog.GetPath()
             self.export_data(filename)
         dialog.Destroy()
         
@@ -425,8 +427,8 @@ class VFFrame(wx.Frame):
         
         t_phase,temporal_phase = pulseBeam.phase_blank(t,envelope,temporal_phase,1e-2)
         if(not electric_field is None):
-            t_field,electric_field = pulseBeam.phase_blank(t,envelope,electric_field,1e-3)        
-        t_field,envelope = pulseBeam.phase_blank(t,envelope,envelope,1e-3)
+            t_field,electric_field = pulseBeam.phase_blank(t,envelope,electric_field,1e-2)        
+        t_field,envelope = pulseBeam.phase_blank(t,envelope,envelope,1e-2)
         
         spectrum,spectral_phase,freq = pulseBeam.get_spectral_intensity_and_phase_vs_wavelength(self.wavelength_limit)
         #spectrum = pulseBeam.get_spectral_intensity()
@@ -438,8 +440,8 @@ class VFFrame(wx.Frame):
         inter_autoco     = pulseBeam.get_interferometric_autoco()
         inten_autoco     = pulseBeam.get_intensiometric_autoco()
 
-        t_autoco,inter_autoco = pulseBeam.phase_blank(t,inten_autoco-1,inter_autoco,1e-3)
-        t_autoco,inten_autoco = pulseBeam.phase_blank(t,inten_autoco-1,inten_autoco,1e-3)
+        t_autoco,inter_autoco = pulseBeam.phase_blank(t,inten_autoco-1,inter_autoco,1e-2)
+        t_autoco,inten_autoco = pulseBeam.phase_blank(t,inten_autoco-1,inten_autoco,1e-2)
         
         frog, frog_limits = pulseBeam.get_SHGFROG()
         self.plot.redraw(t_field,envelope,electric_field,t_phase,temporal_phase,freq,spectrum,freq_phase,spectral_phase,t_autoco,inter_autoco,inten_autoco,frog,frog_limits)
@@ -454,26 +456,27 @@ class VFFrame(wx.Frame):
         self.VFData.SetCellValue(2,1,'%3.3f'%(fwhm2*1e15))
         self.VFData.SetCellValue(3,1,'%3.3f'%(fwhm1*1e15))
         self.VFData.SetCellValue(4,1,'%3.3f'%(pulseBeam.get_spectral_fwhm()*1e9))
+        self.VFData.SetCellValue(5,1,'%3.3f'%(pulseBeam.get_spectral_width()*1e9))
         spot = pulseBeam.get_beam_spot()
         if(spot < 1e-3):
-            self.VFData.SetCellValue(5,1,'%3.3e'%(spot*1e6))
-            self.VFData.SetCellValue(5,2,'um')
+            self.VFData.SetCellValue(6,1,'%3.3e'%(spot*1e6))
+            self.VFData.SetCellValue(6,2,'um')
         else:
-            self.VFData.SetCellValue(5,1,'%3.3e'%(spot*1e3))
-            self.VFData.SetCellValue(5,2,'mm')
-        self.VFData.SetCellValue(6,1,'%3.3e'%(pulseBeam.get_beam_curvature()))
-        self.VFData.SetCellValue(7,1,'%3.3e'%(pulseBeam.calc_peak_power()))
-        self.VFData.SetCellValue(8,1,'%3.3e'%(pulseBeam.calc_peak_intensity()))
-        self.VFData.SetCellValue(9,1,'%3.3e'%(pulseBeam.calc_energy()))
+            self.VFData.SetCellValue(6,1,'%3.3e'%(spot*1e3))
+            self.VFData.SetCellValue(6,2,'mm')
+        self.VFData.SetCellValue(7,1,'%3.3e'%(pulseBeam.get_beam_curvature()))
+        self.VFData.SetCellValue(8,1,'%3.3e'%(pulseBeam.calc_peak_power()))
+        self.VFData.SetCellValue(9,1,'%3.3e'%(pulseBeam.calc_peak_intensity()))
+        self.VFData.SetCellValue(10,1,'%3.3e'%(pulseBeam.calc_energy()))
         rep_rate = pulseBeam.get_rep_rate()
         if(rep_rate < 1e6):
-            self.VFData.SetCellValue(10,1,'%3.3e'%(rep_rate*1e-3))
-            self.VFData.SetCellValue(10,2,'KHz')
+            self.VFData.SetCellValue(11,1,'%3.3e'%(rep_rate*1e-3))
+            self.VFData.SetCellValue(11,2,'KHz')
         else:
-            self.VFData.SetCellValue(10,1,'%3.3e'%(rep_rate*1e-6))
-            self.VFData.SetCellValue(10,2,'MHz')
-        self.VFData.SetCellValue(11,1,'%3.3e'%(pulseBeam.calc_CW_power()))
-        self.VFData.SetCellValue(12,1,'%3.3e'%(self.distance))
+            self.VFData.SetCellValue(12,1,'%3.3e'%(rep_rate*1e-6))
+            self.VFData.SetCellValue(12,2,'MHz')
+        self.VFData.SetCellValue(12,1,'%3.3e'%(pulseBeam.calc_CW_power()))
+        self.VFData.SetCellValue(13,1,'%3.3e'%(self.distance))
 
         self.VFData.Fit()
     
@@ -610,7 +613,7 @@ class VFFrame(wx.Frame):
         if(export_type == 0): #export single frame
             dialog = wx.FileDialog(self,'Choose image file to save plots','./','plots.png','PNG file (*.png)|*.png',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR)
             if(dialog.ShowModal() == wx.ID_OK):
-                filename = dialog.GetFilename()
+                filename = dialog.GetPath()
                 if(export_elements == 1): #everything
                     self.export_frame_all_elements(filename)
                 else:
