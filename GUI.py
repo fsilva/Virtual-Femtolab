@@ -116,6 +116,7 @@ class VFFrame(wx.Frame):
     def __set_properties(self):
         # begin wxGlade: VFFrame.__set_properties
         self.SetBackgroundColour(wx.Colour(212,208,200))
+        self.SetDoubleBuffered(True)
         self.SetTitle("Virtual Femtolab")
         self.SetSize((900,675))
         self.VFData.CreateGrid(14, 3)
@@ -517,8 +518,9 @@ class VFFrame(wx.Frame):
         
     def paint_event(self,event):
         event.Skip()
-        paintdc = wx.PaintDC(self.SchematicPanel)
+        paintdc = wx.AutoBufferedPaintDCFactory(self.SchematicPanel)
         dc = wx.GCDC(paintdc)
+        dc.Clear()
         self.draw_schematic(dc)
 
     
