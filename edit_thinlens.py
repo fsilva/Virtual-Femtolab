@@ -33,7 +33,7 @@ class EditThinLens(wx.Frame):
         self.SetTitle("Thin Lens Properties")
         self.spin_ctrl_1.SetMinSize((128, 30))
         if(sys.platform=='win32'):
-            self.SetBackgroundColour(wx.Colour(212,208,200))
+            self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
         # end wxGlade
 
     def __do_layout(self):

@@ -49,7 +49,7 @@ class EditMaterialPropagation(wx.Frame):
         self.SetTitle("Edit Material Propagation")
         self.SetMinSize((270,300))
         if(sys.platform=='win32'):
-            self.SetBackgroundColour(wx.Colour(212,208,200))
+            self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
         # end wxGlade
 
     def __do_layout(self):

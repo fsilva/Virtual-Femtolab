@@ -32,7 +32,7 @@ class AddDialog(wx.Dialog):
         self.list_box_1.SetMinSize((234, 139))
         self.list_box_1.SetSelection(0)
         if(sys.platform=='win32'):
-            self.SetBackgroundColour(wx.Colour(212,208,200))
+            self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
         # end wxGlade
 
     def __do_layout(self):
