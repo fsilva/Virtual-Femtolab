@@ -115,7 +115,8 @@ class VFFrame(wx.Frame):
 
     def __set_properties(self):
         # begin wxGlade: VFFrame.__set_properties
-        self.SetBackgroundColour(wx.Colour(212,208,200))
+        if(sys.platform=='win32'):
+            self.SetBackgroundColour(wx.Colour(212,208,200))
         self.SetDoubleBuffered(True)
         self.SetTitle("Virtual Femtolab")
         self.SetSize((900,675))
@@ -520,7 +521,7 @@ class VFFrame(wx.Frame):
         event.Skip()
         paintdc = wx.AutoBufferedPaintDCFactory(self.SchematicPanel)
         if(sys.platform=='win32'):
-            paintdc.SetBackground(self.GetBackgroundColor())
+            paintdc.SetBackground(wx.Brush(self.GetBackgroundColour()))
         paintdc.Clear()
         dc = wx.GCDC(paintdc)
         
