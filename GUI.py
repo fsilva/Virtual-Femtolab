@@ -519,8 +519,11 @@ class VFFrame(wx.Frame):
     def paint_event(self,event):
         event.Skip()
         paintdc = wx.AutoBufferedPaintDCFactory(self.SchematicPanel)
+        if(sys.platform=='win32'):
+            paintdc.SetBackground(self.GetBackgroundColor())
+        paintdc.Clear()
         dc = wx.GCDC(paintdc)
-        dc.Clear()
+        
         self.draw_schematic(dc)
 
     
