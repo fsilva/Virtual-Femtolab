@@ -115,8 +115,7 @@ class VFFrame(wx.Frame):
 
     def __set_properties(self):
         # begin wxGlade: VFFrame.__set_properties
-        if(sys.platform=='win32'):
-            self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
         self.SetDoubleBuffered(True)
         self.SetTitle("Virtual Femtolab")
         self.SetSize((900,675))
