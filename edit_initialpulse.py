@@ -5,6 +5,7 @@
 import wx
 from math import sqrt
 import csv_utils
+import sys
 
 # begin wxGlade: extracode
 # end wxGlade
