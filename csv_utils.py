@@ -15,7 +15,7 @@ def saveCSVtable(filename,header,table):
 
 class csv_loader:
 
-    def __init__(self,filename):
+    def __init__(self,filename,num_columns):
         
         csvfile = open(filename,"rU")
         try:
@@ -35,21 +35,24 @@ class csv_loader:
     
         dataX = []
         dataY = []
-        for line in reader:
-            dataX.append(float(line[0]))
-            dataY.append(float(line[1]))
+        for i in xrange(num_columns):
+            dataY.append([])
+        
+        try:
+            for line in reader:
+                dataX.append(float(line[0]))
+                for i in xrange(num_columns):
+                    dataY[i].append(float(line[1+i]))
+        except:
+            raise csv.Error
 
         self.x = numpy.array(dataX)
-        self.y = abs(numpy.array(dataY)) #TODO: fix
+        self.y = numpy.array(dataY) 
 
-
-    def get_data_for_x_series(self,desiredX): #lambdas must be increasing
-        #print desiredX
-        #numpy.set_printoptions(threshold=1e50)
-        
-        #print self.x
-        #print self.y
-        return numpy.interp(desiredX,self.x,self.y)
+    def get_data_for_x_series(self,desiredX,column): #lambdas must be increasing
+        if(len(self.y) <= column):
+            return numpy.zeros(len(desiredX)) #in case we are being asked for an inexistent column, return 0 (probably the phase)
+        return numpy.interp(desiredX,self.x,self.y[column])
         
     def detect_wavelength_scale(self): #detect if in nm or m and make sure y is positive
         if(self.x[0] > 1 and self.x[1] > 1):

@@ -222,7 +222,12 @@ class EditInitialPulse(wx.Frame):
     def load_electric_field_envelope(self, event): # wxGlade: EditInitialPulse.<event_handler>
         dialog = wx.MessageDialog(None, 'The expected file format is 2 columns: time and electric field envelope. They can be separated by space, comma or tab. The decimal separator must be a point. Time can be in seconds or femtoseconds.', 'File Format', 
                     wx.OK | wx.NO_DEFAULT | wx.ICON_INFORMATION)
+        dialog = wx.SingleChoiceDialog(self, 'The accepted filetype is CSV. The program will try to figure out the separator, \nand will fail if it can\'t. The decimal separator must be a point. \nTime can be in seconds or femtoseconds, but must be in increasing order.\n Which fields do you want to load?','File Type',['Time, Envelope','Time, Envelope, Phase'])
         dialog.ShowModal()
+        if(dialog.GetSelection() == 0):
+            self.num_columns = 1
+        else:
+            self.num_columns = 2
     
         dialog = wx.FileDialog(self,'Choose file to load electric field envelope','./','','All Files (*.*)|*.*',wx.FD_CHANGE_DIR)
         if(dialog.ShowModal() == wx.ID_OK):
@@ -232,12 +237,18 @@ class EditInitialPulse(wx.Frame):
             self.radio_btn_3.SetValue(0)
             
         event.Skip()
+        
+        
 
 
     def load_spectrum(self, event): # wxGlade: EditInitialPulse.<event_handler>
-        dialog = wx.MessageDialog(None, 'The expected file format is 2 columns: wavelength and spectral intensity. They can be separated by space, comma or tab. The decimal separator must be a point. The wavelength can be in nm or meters.', 'File Format', 
-                    wx.OK | wx.NO_DEFAULT | wx.ICON_INFORMATION)
+        dialog = wx.SingleChoiceDialog(self, 'The accepted filetype is CSV. The program will try to figure out the separator, \nand will fail if it can\'t. The decimal separator must be a point. Wavelength can be in nm or meters,\n but must be in increasing order. Which fields do you want to load?','File Type',['Wavelength, Spectral Intensity','Wavelength, Spectral Intensity, Phase'])
+        #wx.MessageDialog(None, 'The expected file format is 2 columns: wavelength and spectral intensity. They can be separated by space, comma or tab. The decimal separator must be a point. The wavelength can be in nm or meters.', 'File Format',                     wx.OK | wx.NO_DEFAULT | wx.ICON_INFORMATION)
         dialog.ShowModal()
+        if(dialog.GetSelection() == 0):
+            self.num_columns = 1
+        else:
+            self.num_columns = 2
     
         dialog = wx.FileDialog(self,'Choose file to load spectrum','./','','All Files (*.*)|*.*',wx.FD_CHANGE_DIR)
         if(dialog.ShowModal() == wx.ID_OK):
@@ -246,14 +257,16 @@ class EditInitialPulse(wx.Frame):
             self.radio_btn_1.SetValue(1)
             self.radio_btn_4.SetValue(0)
         event.Skip()
+        
+        
+        
 
     def refresh_click(self, event): # wxGlade: EditInitialPulse.<event_handler>
         # if we are loading from files test to see if they are valid before doing anything. if not valid fail graciously
         from csv import Error as csvError
         if(self.radio_btn_3.GetValue()==1): #load pulse shape
-            loader = csv_utils.csv_loader(self.envelope_filename)
             try:
-                loader = csv_utils.csv_loader(self.envelope_filename)
+                loader = csv_utils.csv_loader(self.envelope_filename,self.num_columns)
             except(csvError): #error loading the file
                  dialog = wx.MessageDialog(None, 'Error loading selected file. File format not recognized.', 'File Format', wx.OK | wx.NO_DEFAULT | wx.ICON_INFORMATION)
                  dialog.ShowModal()
@@ -261,7 +274,7 @@ class EditInitialPulse(wx.Frame):
                  
         elif(self.radio_btn_4.GetValue()==1): #load spectrum
             try:
-                loader = csv_utils.csv_loader(self.spectrum_filename)
+                loader = csv_utils.csv_loader(self.spectrum_filename,self.num_columns)
             except(csvError): #error loading the file
                  dialog = wx.MessageDialog(None, 'Error loading selected file. File format not recognized.', 'File Format', wx.OK | wx.NO_DEFAULT | wx.ICON_INFORMATION)
                  dialog.ShowModal()

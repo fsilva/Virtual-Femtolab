@@ -89,6 +89,9 @@ class pulseBeam:
         #self.FFT[:self.NT/4]   = sqrt(self.Spectrum[self.NT/4:])
         self.ElectricField[:] = ifft(self.FFT)
         
+        
+        
+        
     def change_window(self, NT, deltaT):
         if(self.initialTemporalFWHM != 0):
             #save data
@@ -103,7 +106,7 @@ class pulseBeam:
             tmp_rate = self.rate
             self.__init__(NT,deltaT,self.lambdaZero)
             self.initialize_pulse(tmp_timeFWHM , tmp_GVD , tmp_TOD , tmp_FOD , tmp_spot, tmp_curvature, tmp_peak_power , tmp_energy , tmp_rate)
-        else:
+        elif(self.initialSpectralFWHM != 0):
             tmp_spectralFWHM = self.initialSpectralFWHM
             tmp_GVD = self.initialGVD
             tmp_TOD = self.initialTOD
@@ -115,7 +118,33 @@ class pulseBeam:
             tmp_rate = self.rate
             self.__init__(NT,deltaT,self.lambdaZero)
             self.initialize_spectrum(tmp_spectralFWHM , tmp_GVD , tmp_TOD , tmp_FOD , tmp_spot, tmp_curvature, tmp_peak_power , tmp_energy , tmp_rate)
-    
+        elif(not self.initialEnvelopeLoader is None):
+            tmp_envelopeloader = self.initialEnvelopeLoader
+            tmp_GVD = self.initialGVD
+            tmp_TOD = self.initialTOD
+            tmp_FOD = self.initialFOD
+            tmp_spot = self.BeamProfile_spot
+            tmp_curvature = self.BeamProfile_curvature
+            tmp_peak_power = self.peak_power
+            tmp_energy = self.energy
+            tmp_rate = self.rate
+            self.__init__(NT,deltaT,self.lambdaZero)
+            self.initialize_load_envelope(tmp_envelopeloader , tmp_GVD , tmp_TOD , tmp_FOD , tmp_spot, tmp_curvature, tmp_peak_power , tmp_energy , tmp_rate)
+        elif(not self.initialSpectrumLoader is None):
+            tmp_spectrumloader = self.initialSpectrumLoader
+            tmp_GVD = self.initialGVD
+            tmp_TOD = self.initialTOD
+            tmp_FOD = self.initialFOD
+            tmp_spot = self.BeamProfile_spot
+            tmp_curvature = self.BeamProfile_curvature
+            tmp_peak_power = self.peak_power
+            tmp_energy = self.energy
+            tmp_rate = self.rate
+            self.__init__(NT,deltaT,self.lambdaZero)
+            self.initialize_load_spectrum(tmp_spectrumloader , tmp_GVD , tmp_TOD , tmp_FOD , tmp_spot, tmp_curvature, tmp_peak_power , tmp_energy , tmp_rate)
+        
+        
+            
     def change_central_wavelength(self, lambdaZero):
         if(self.initialTemporalFWHM != 0):
             #save data
@@ -130,7 +159,7 @@ class pulseBeam:
             tmp_rate = self.rate
             self.__init__(self.NT,self.deltaT,lambdaZero)
             self.initialize_pulse(tmp_timeFWHM , tmp_GVD , tmp_TOD , tmp_FOD , tmp_spot, tmp_curvature, tmp_peak_power , tmp_energy , tmp_rate)
-        else:
+        elif(self.initialSpectralFWHM != 0):
             tmp_spectralFWHM = self.initialSpectralFWHM
             tmp_GVD = self.initialGVD
             tmp_TOD = self.initialTOD
@@ -142,7 +171,30 @@ class pulseBeam:
             tmp_rate = self.rate
             self.__init__(self.NT,self.deltaT,lambdaZero)
             self.initialize_spectrum(tmp_spectralFWHM , tmp_GVD , tmp_TOD , tmp_FOD , tmp_spot, tmp_curvature, tmp_peak_power , tmp_energy , tmp_rate)
-                
+        elif(not self.initialEnvelopeLoader is None):
+            tmp_envelopeloader = self.initialEnvelopeLoader
+            tmp_GVD = self.initialGVD
+            tmp_TOD = self.initialTOD
+            tmp_FOD = self.initialFOD
+            tmp_spot = self.BeamProfile_spot
+            tmp_curvature = self.BeamProfile_curvature
+            tmp_peak_power = self.peak_power
+            tmp_energy = self.energy
+            tmp_rate = self.rate
+            self.__init__(self.NT,self.deltaT,lambdaZero)
+            self.initialize_load_envelope(tmp_envelopeloader , tmp_GVD , tmp_TOD , tmp_FOD , tmp_spot, tmp_curvature, tmp_peak_power , tmp_energy , tmp_rate)
+        elif(not self.initialSpectrumLoader is None):
+            tmp_spectrumloader = self.initialSpectrumLoader
+            tmp_GVD = self.initialGVD
+            tmp_TOD = self.initialTOD
+            tmp_FOD = self.initialFOD
+            tmp_spot = self.BeamProfile_spot
+            tmp_curvature = self.BeamProfile_curvature
+            tmp_peak_power = self.peak_power
+            tmp_energy = self.energy
+            tmp_rate = self.rate
+            self.__init__(self.NT,self.deltaT,lambdaZero)
+            self.initialize_load_spectrum(tmp_spectrumloader , tmp_GVD , tmp_TOD , tmp_FOD , tmp_spot, tmp_curvature, tmp_peak_power , tmp_energy , tmp_rate)
         
         
     def initialize_pulse(self, timeFWHM, GVD,TOD,FOD, spot, curvature, peak_power, energy, rate):
@@ -158,6 +210,8 @@ class pulseBeam:
         
         self.initialTemporalFWHM = timeFWHM
         self.initialSpectralFWHM = 0
+        self.initialEnvelopeLoader = None
+        self.initialSpectrumLoader = None
         
         t_sigma = timeFWHM/2.35
         
@@ -187,14 +241,13 @@ class pulseBeam:
 
         self.initialTemporalFWHM = 0
         self.initialSpectralFWHM = 0
-
-        
+        self.initialEnvelopeLoader = loader
+        self.initialSpectrumLoader = None
+         
         loader.detect_time_scale()
         
-        self.ElectricField[:]   = loader.get_data_for_x_series(self.t)
-        
-        print self.ElectricField
-        
+        self.ElectricField[:]   = loader.get_data_for_x_series(self.t,0)*exp(1j*loader.get_data_for_x_series(self.t,1))
+                
         self.rescale_field_to_energy_or_peak_power()
         
         self.field_to_spectrum()
@@ -218,6 +271,8 @@ class pulseBeam:
         
         self.initialTemporalFWHM = 0
         self.initialSpectralFWHM = spectralfwhm
+        self.initialEnvelopeLoader = None
+        self.initialSpectrumLoader = None
         
         deltaFreq = 3e8/self.lambdaZero**2*spectralfwhm/2.35*2
         
@@ -249,13 +304,14 @@ class pulseBeam:
 
         self.initialTemporalFWHM = 0
         self.initialSpectralFWHM = 0
+        self.initialEnvelopeLoader = None
+        self.initialSpectrumLoader = loader
 
         wavelengths = self.wavelengths[:]
-
     
         loader.detect_wavelength_scale()
         
-        self.FFT[:] = sqrt(loader.get_data_for_x_series(wavelengths[:]))
+        self.FFT[:] = sqrt(loader.get_data_for_x_series(wavelengths,0))*exp(1j*loader.get_data_for_x_series(wavelengths,1))
         
         self.apply_dispersion(GVD,TOD,FOD) 
         self.spectrum_to_field()
@@ -301,7 +357,7 @@ class pulseBeam:
             wavelength = 3e8/self.frequencies[i]
             if(lambda1 < wavelength and wavelength < lambda2):
                 self.Spectrum[i] *= mult_factor
-                self.Spectrum[i] *= mult_factor
+                self.Spectrum[i] *= mult_factor  #TODO fix this function
             
             
     def beam_apply_propagation(self,length,n):
@@ -570,7 +626,7 @@ class pulseBeam:
             return real(self.ElectricField*exp(1j*(2*pi*self.freqZero*self.t+self.get_temporal_phase())))
     
     def get_spectral_intensity(self):
-        return abs(roll(self.Spectrum,self.NT/2))**2
+        return abs(roll(self.Spectrum,self.NT/2))
     
     def get_spectral_phase(self):
         phase = unwrap(angle(roll(self.Spectrum,self.NT/2))) 
