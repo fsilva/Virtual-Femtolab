@@ -102,9 +102,9 @@ class VFFrame(wx.Frame):
         self.Bind(wx.EVT_COMMAND_SCROLL, self.distanceslider_change, self.DistanceSlider)
         self.Bind(wx.EVT_TEXT_ENTER, self.edit_distance_change)
         #self.SchematicPanel.Bind(wx.EVT_PAINT, self.repaint_schematic) 
-        self.Bind(wx.EVT_PAINT, self.paint_event) 
+        self.SchematicPanel.Bind(wx.EVT_PAINT, self.paint_event) 
         self.SchematicPanel.Bind(wx.EVT_LEFT_UP, self.click_schematic) 
-        self.SchematicPanel.Bind(wx.EVT_SIZE, self.resize_schematic) 
+        #self.SchematicPanel.Bind(wx.EVT_SIZE, self.resize_schematic) 
     
         # end wxGlade
         
@@ -115,6 +115,7 @@ class VFFrame(wx.Frame):
 
     def __set_properties(self):
         # begin wxGlade: VFFrame.__set_properties
+        self.SetBackgroundColour(wx.Colour(212,208,200))
         self.SetTitle("Virtual Femtolab")
         self.SetSize((900,675))
         self.VFData.CreateGrid(14, 3)
@@ -399,7 +400,7 @@ class VFFrame(wx.Frame):
         self.DistanceText.ChangeValue(str(self.distance))
         self.refresh_interface()
         self.refresh_grid_information()
-        self.repaint_schematic()
+        self.SchematicPanel.Refresh() #trigger paint event
         
         
        
@@ -510,33 +511,17 @@ class VFFrame(wx.Frame):
         if(i <= len(self.propagator.get_elements())):
             self.selected = i
             
-        self.repaint_schematic()
+        self.SchematicPanel.Refresh() #trigger paint event
+
+        
         
     def paint_event(self,event):
-        #event.Skip()
-        dc = wx.BufferedPaintDC(self.SchematicPanel, self.buffer)
-#        dc = wx.PaintDC(self.SchematicPanel)
-        self.repaint_schematic()
-    
-        
-    def repaint_schematic(self):
-        dc = wx.BufferedPaintDC(self.SchematicPanel, self.buffer)
-#        dc = wx.PaintDC(self.SchematicPanel)
-        #dc.SetBackground(wx.Brush(self.GetBackgroundColour()))
-        dc.SetBackground(wx.Brush('#efefef'))
-        dc.BeginDrawing()
-        dc.Clear()
-
+        event.Skip()
+        paintdc = wx.PaintDC(self.SchematicPanel)
+        dc = wx.GCDC(paintdc)
         self.draw_schematic(dc)
 
-        #event.Skip()
-        dc.EndDrawing()
-        
-    def resize_schematic(self,event):
-        size = self.SchematicPanel.GetClientSize()
-        self.buffer = wx.EmptyBitmap(size.width, size.height)
-        self.dc = wx.BufferedDC(None, self.buffer)
-        
+    
         
     def draw_schematic(self,dc):
         width = config.schematic_element_width
