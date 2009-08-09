@@ -519,7 +519,7 @@ class VFFrame(wx.Frame):
     def paint_event(self,event):
         event.Skip()
         paintdc = wx.AutoBufferedPaintDCFactory(self.SchematicPanel)
-        if(sys.platform=='win32'):
+        if(sys.platform != 'darwin'): #it seems we that macosx does better with the default color
             paintdc.SetBackground(wx.Brush(self.GetBackgroundColour()))
         paintdc.Clear()
         dc = wx.GCDC(paintdc)
@@ -724,7 +724,8 @@ class VFFrame(wx.Frame):
         memorydc.SelectObject(bitmap1)
         memorydc.SetBackground(wx.Brush('white'))
         memorydc.Clear()
-        self.draw_schematic(memorydc)
+        dc = wx.GCDC(memorydc)
+        self.draw_schematic(dc)
         memorydc.SelectObject(wx.NullBitmap)
         memorydc.Destroy()
         #bitmap1.SaveFile(filename,wx.BITMAP_TYPE_PNG)
