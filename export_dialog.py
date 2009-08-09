@@ -72,7 +72,7 @@ class ExportFrame(wx.Frame):
         export_elements = self.element_box.GetSelection()
         self.Destroy()
         self.export_callback(export_type, export_elements, num_frames)
-        event.Skip()
+
 
 # end of class ExportFrame
 
