@@ -34,6 +34,8 @@ class ExportFrame(wx.Frame):
         self.num_frames_ctrl.Enable(False)
         self.element_box.SetSelection(1)
         self.num_frames_ctrl.SetMinSize((80, 30))
+        if(sys.platform=='win32'):
+            self.SetBackgroundColour(wx.Colour(212,208,200))
         # end wxGlade
 
     def __do_layout(self):

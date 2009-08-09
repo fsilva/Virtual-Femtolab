@@ -79,6 +79,8 @@ class EditInitialPulse(wx.Frame):
         self.radio_btn_1.SetValue(1)
         self.radio_btn_2_copy.SetValue(1)
         self.notebook_1.SetMinSize((573, 164))
+        if(sys.platform=='win32'):
+            self.SetBackgroundColour(wx.Colour(212,208,200))
         # end wxGlade
 
     def __do_layout(self):

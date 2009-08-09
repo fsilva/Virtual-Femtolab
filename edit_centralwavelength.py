@@ -36,6 +36,8 @@ class EditCentralWavelength(wx.Frame):
         self.SetTitle("Central Wavelength")
         self.spin_ctrl_1.SetMinSize((128, 30))
         self.spin_ctrl_2.SetMinSize((128, 30))
+        if(sys.platform=='win32'):
+            self.SetBackgroundColour(wx.Colour(212,208,200))
         
         # end wxGlade
 
