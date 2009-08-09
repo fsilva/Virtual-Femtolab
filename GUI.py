@@ -111,7 +111,7 @@ class VFFrame(wx.Frame):
         self.init_calculations()
         self.refresh_interface()
         self.refresh_grid_information()
-        self.resize_schematic(None)
+
 
     def __set_properties(self):
         # begin wxGlade: VFFrame.__set_properties
