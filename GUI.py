@@ -187,7 +187,7 @@ class VFFrame(wx.Frame):
         self.VFData.SetCellValue(8,0,'Peak Power')
         self.VFData.SetCellValue(8,2,'W')
         self.VFData.SetCellValue(9,0,'Peak Intensity')
-        self.VFData.SetCellValue(9,2,'Wm^-2')
+        self.VFData.SetCellValue(9,2,'Wcm^-2')
         self.VFData.SetCellValue(10,0,'Pulse Energy')
         self.VFData.SetCellValue(10,2,'J')
         self.VFData.SetCellValue(11,0,'Rep. Rate')
@@ -468,7 +468,7 @@ class VFFrame(wx.Frame):
             self.VFData.SetCellValue(6,2,'mm')
         self.VFData.SetCellValue(7,1,'%3.3e'%(pulseBeam.get_beam_curvature()))
         self.VFData.SetCellValue(8,1,'%3.3e'%(pulseBeam.calc_peak_power()))
-        self.VFData.SetCellValue(9,1,'%3.3e'%(pulseBeam.calc_peak_intensity()))
+        self.VFData.SetCellValue(9,1,'%3.3e'%(pulseBeam.calc_peak_intensity()*1e-4)) #W/cm^2
         self.VFData.SetCellValue(10,1,'%3.3e'%(pulseBeam.calc_energy()))
         rep_rate = pulseBeam.get_rep_rate()
         if(rep_rate < 1e6):
