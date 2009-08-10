@@ -5,16 +5,42 @@ Usage:
     python setup.py py2app
 """
 
-from setuptools import setup
-
-APP = ['main.py']
-DATA_FILES = []
-OPTIONS = {'argv_emulation': True, 'iconfile':'icon.icns'}
+#from setuptools import setup
+from distutils.core import setup
 
 
-setup(
-    app=APP,
-    data_files=DATA_FILES,
-    options={'py2app': OPTIONS},
-    setup_requires=['py2app'],
+#APP = ['main.py']
+#DATA_FILES = []
+#OPTIONS = {'argv_emulation': True, 
+#           'iconfile':'icon.icns',
+#         'includes': ['pytz'],
+#          'packages': ['matplotlib','numpy','wx','wxPython','PIL']}
+
+
+#setup(
+#    app=APP,
+#    data_files=DATA_FILES,
+#    options={'py2app': OPTIONS},
+#    setup_requires=['py2app'],
+#)
+
+from distutils.core import setup
+import os
+
+includes=["PIL", "PIL._imaging", "PIL._imagingft", "PIL._imagingmath", "PIL._imagingtk", "Image", "PIL.Image"]
+packages = ["PIL", "PIL.Image"]
+
+import py2app
+plist = {}
+setup(name='Virtual-FemtoLab',
+   options={ 'py2app': { 'includes':includes, #'packages': packages,
+            'compressed': True,
+            'optimize': 2,
+            'plist': plist,'iconfile':'icon.icns',} },
+   version='0.1',
+   app=["main.py"],
+   setup_requires=["py2app"],
 )
+
+
+

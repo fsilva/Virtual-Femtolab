@@ -1,6 +1,6 @@
 
 
-NT = 256
+NT = 1024
 deltaT = 256e-15
 lambdaZero = 800e-9
 
