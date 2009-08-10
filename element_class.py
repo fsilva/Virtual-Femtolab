@@ -1,6 +1,6 @@
 
 #Master Element Class, return unaltered electric field/spectra
-#                      calculate ABCD propagation
+#                     
 
 from numpy import *
 
