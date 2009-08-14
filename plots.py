@@ -52,6 +52,7 @@ class FourPlots(wx.Panel):
             self.plot1_line1, = self.plot1.plot(t_envelope, envelope, 'r')
             if(not electric_field is None):
                 self.plot1_line2, = self.plot1.plot(t_envelope, electric_field, 'b')
+            self.plot1.set_xlim((min(t_envelope),max(t_envelope)))
             self.plot1_twinx = self.plot1.twinx()
             self.plot1_line3, = self.plot1_twinx.plot(t_phase, temporal_phase, 'k')
             
@@ -89,10 +90,12 @@ class FourPlots(wx.Panel):
             #SHG FROG
             self.plot4_imshow = self.plot4.imshow(frog, interpolation='bilinear',extent=frog_limits,aspect="auto")
             self.plot4.set_xlabel('Delay (s)',fontsize='small')
-            self.plot4.set_ylabel('Envelope Frequency(rad s^-1)',fontsize='small')
+            self.plot4.set_yticklabels('',visible=False)
+            self.plot4_rightside = self.plot4.twinx()
+            self.plot4_rightside.set_ylabel('Envelope Frequency(rad s^-1)',fontsize='small')
+            self.plot4_rightside.set_ylim((frog_limits[2],frog_limits[3]))
             #TODO: change bilinear to better, but also fast, interpolation
-            #extent = pulsebeam.FROGxmin+k*pulsebeam.FROGdeltax, pulsebeam.FROGxmin+l*pulsebeam.FROGdeltax, \
-            #             pulsebeam.FROGymin+i*pulsebeam.FROGdeltay, pulsebeam.FROGymin+j*pulsebeam.FROGdeltay
+
             
             self.plot_init = True
         else:
@@ -135,6 +138,7 @@ class FourPlots(wx.Panel):
 
             #SHG FROG
             self.plot4_imshow.set_data(frog)
+            self.plot4_rightside.set_ylim((frog_limits[2],frog_limits[3]))
             
         self.figure.canvas.draw()
         

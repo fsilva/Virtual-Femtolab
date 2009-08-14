@@ -53,8 +53,8 @@ class VFFrame(wx.Frame):
         wxglade_tmp_menu.Append(self.menu_compwindow_id, "Computational Window", "", wx.ITEM_NORMAL)
         self.menu_centralwavelength_id = wx.NewId()
         wxglade_tmp_menu.Append(self.menu_centralwavelength_id, "Central Wavelength", "", wx.ITEM_NORMAL)
-
         self.MainFrame_menubar.Append(wxglade_tmp_menu, "Options")
+        
         wxglade_tmp_menu = wx.Menu()
         self.menu_exportplots_id = wx.NewId()
         wxglade_tmp_menu.Append(self.menu_exportplots_id, "Export Plots/Animations", "", wx.ITEM_NORMAL)
@@ -63,7 +63,9 @@ class VFFrame(wx.Frame):
         self.MainFrame_menubar.Append(wxglade_tmp_menu, "Export")
         
         wxglade_tmp_menu = wx.Menu()
-        self.MainFrame_menubar.Append(wxglade_tmp_menu, "About")
+        self.menu_about_id = wx.NewId()
+        wxglade_tmp_menu.Append(self.menu_about_id, "About", "", wx.ITEM_NORMAL)
+        self.MainFrame_menubar.Append(wxglade_tmp_menu, "Help")
         self.SetMenuBar(self.MainFrame_menubar)
         # Menu Bar end
 
@@ -93,6 +95,7 @@ class VFFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.menu_open_click, id=self.menu_load_id)
         self.Bind(wx.EVT_MENU, self.menu_save_click, id=self.menu_save_id)
         self.Bind(wx.EVT_MENU, self.menu_exit_click, id=self.menu_exit)
+        self.Bind(wx.EVT_MENU, self.menu_about_click, id=self.menu_about_id)
         self.Bind(wx.EVT_MENU, self.menu_exportplots_click, id=self.menu_exportplots_id)
         self.Bind(wx.EVT_MENU, self.menu_exportdata_click, id=self.menu_exportdata_id)
         self.Bind(wx.EVT_BUTTON, self.addbutton_click, self.AddButton)
@@ -234,6 +237,11 @@ class VFFrame(wx.Frame):
 
     def menu_exit_click(self, event): # wxGlade: VFFrame.<event_handler>
         self.Close()
+        
+    def menu_about_click(self, event): # wxGlade: VFFrame.<event_handler>
+        import about_dialog  #todo change this file's name
+        dialog = about_dialog.AboutDialog(self)
+        dialog.Show()
 
     def menu_exportplots_click(self, event): # wxGlade: VFFrame.<event_handler>
         import export_dialog  #todo change this file's name
@@ -661,6 +669,7 @@ class VFFrame(wx.Frame):
         img = Image.open(imgdata)
 
         #import matplotlib nonGUI backend and use that
+        import matplotlib as mpl
         from matplotlib.backends.backend_agg import FigureCanvasAgg as PngCanvas
         figure = mpl.figure.Figure(dpi=150, figsize=(16,6))
         canvas = PngCanvas(figure)

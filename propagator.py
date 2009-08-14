@@ -1,4 +1,6 @@
 
+from copy import copy
+
 import pulseBeam
 #import initialpulse_dialog
 #import addelement_dialog
@@ -152,13 +154,15 @@ class Propagator:
         
     def add_element(self,element_type,position):
         if(element_type == 'Material Propagation'):
-           element = element_propagation.Element_Propagation(0.001,element_propagation.materials[0],800e-9)
+            material = copy(element_propagation.materials[0])
+            material[0] = 'New Element'
+            element = element_propagation.Element_Propagation(0.001,material,800e-9)
         elif(element_type == 'Thin Lens'):
-           element = element_thinlens.Element_ThinLens(0.1,800e-9)
+            element = element_thinlens.Element_ThinLens(0.1,800e-9)
         elif(element_type == 'Chirped Mirror'):
-           element = element_chirpedmirror.Element_ChirpedMirror(element_chirpedmirror.mirrors[0],22,800e-9)
+            element = element_chirpedmirror.Element_ChirpedMirror(element_chirpedmirror.mirrors[0],22,800e-9)
         elif(element_type == 'Bandstop Spectral Filter'):
-           element = element_filter.Element_Filter(780e-9,820e-9)
+            element = element_filter.Element_Filter(780e-9,820e-9)
         else:
             return
             
