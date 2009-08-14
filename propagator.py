@@ -41,7 +41,7 @@ class Propagator:
         return self.pulseBeam
         
     def example_pulseBeam(self):
-        self.initialPulseBeam.initialize_pulse(10e-15,0,0,0,1e-4,1e10,0,1e-3,1000)
+        self.initialPulseBeam.initialize_pulse(6e-15,0,0,0,5e-3,1e10,0,2e-9,80e6)
         
         self.initialPulseBeam.calculate_autoco()
         self.initialPulseBeam.calculate_FROG()
@@ -52,12 +52,14 @@ class Propagator:
 
     
     def example_elements(self):
-        self.elements.append(element_thinlens.Element_ThinLens(1e-3,self.lambdaZero))
-        self.elements.append(element_propagation.Element_Propagation(0.001,element_propagation.materials[1],self.lambdaZero))
         self.elements.append(element_thinlens.Element_ThinLens(1,self.lambdaZero))
-        self.elements.append(element_propagation.Element_Propagation(0.001,element_propagation.materials[1],800e-9))
-        self.elements.append(element_thinlens.Element_ThinLens(1,800e-9))
-        self.elements.append(element_propagation.Element_Propagation(0.001,element_propagation.materials[0],800e-9))
+        self.elements.append(element_propagation.Element_Propagation(0.5,element_propagation.materials[2],self.lambdaZero))
+        self.elements.append(element_propagation.Element_Propagation(0.0005,element_propagation.materials[0],800e-9))
+        self.elements.append(element_propagation.Element_Propagation(1.5,element_propagation.materials[2],self.lambdaZero))
+        #self.elements.append(element_thinlens.Element_ThinLens(1,self.lambdaZero))
+        #self.elements.append(element_propagation.Element_Propagation(0.001,element_propagation.materials[1],800e-9))
+        #self.elements.append(element_thinlens.Element_ThinLens(1,800e-9))
+        #self.elements.append(element_propagation.Element_Propagation(0.001,element_propagation.materials[0],800e-9))
         #self.elements.append(element_propagation.Element_Propagation(0.002,element_propagation.materials[1],800e-9))
         #self.elements.append(element_propagation.Element_Propagation(0.001,element_propagation.materials[1],800e-9))
         #self.elements.append(element_propagation.Element_Propagation(0.002,element_propagation.materials[1],800e-9))

@@ -475,8 +475,8 @@ class VFFrame(wx.Frame):
             self.VFData.SetCellValue(11,1,'%3.3e'%(rep_rate*1e-3))
             self.VFData.SetCellValue(11,2,'KHz')
         else:
-            self.VFData.SetCellValue(12,1,'%3.3e'%(rep_rate*1e-6))
-            self.VFData.SetCellValue(12,2,'MHz')
+            self.VFData.SetCellValue(11,1,'%3.3e'%(rep_rate*1e-6))
+            self.VFData.SetCellValue(11,2,'MHz')
         self.VFData.SetCellValue(12,1,'%3.3e'%(pulseBeam.calc_CW_power()))
         self.VFData.SetCellValue(13,1,'%3.3e'%(self.distance))
 
