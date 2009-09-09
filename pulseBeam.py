@@ -694,3 +694,42 @@ class pulseBeam:
             return #no information here
             
         return t[i:j], phase_array[i:j]
+        
+        
+#### Interesting Estimatives ###
+
+    # distance that increases the spot size in sqrt(2)
+    def calc_diffraction_distance(self, n):
+        return numpy.pi*n*self.get_spot_size()**2/self.lambdaZero
+        
+    #distance that increases temporal duration by X percent, due to chirp (TODO: find X)
+    def calc_gvd_distance(self,gvd):
+        fwhm1,fwhm2 = self.get_temporal_fwhm()
+        return fwhm2**2/2/gvd
+        
+    # distance over which the cumulated nonlinear phase varies by a factor of one. 
+    def calc_selffocusing_distance(self,n0,n2):
+        return self.lambdaZero/2/numpy.pi/n/self.calc_peak_intensity()
+        
+    # power where self-focusing overcomes diffraction
+    def calc_critical_power(self,n0,n2):
+        return 3.77*self.lambdaZero**2/8/numpy.pi/n0/n2
+        
+    # distance to beam collapse
+    def calc_colapse_distance(self,n0,n2,curvature=0):
+        calculation = (numpy.sqrt(self.calc_peak_power()/self.calc_critical_power())-0.852)**2-0.0219
+        lc = 0.367*self.calc_diffraction_distance(n0)/numpy.sqrt(calculation)
+        if(curvature > 0):
+            return curvature*lc/(curvature+lc)
+        else:
+            return lc
+    
+    # distance over which the integrated nonlinear phase induced by an ionized plasma changes by a factor of 1
+    def calc_plasmadefocusing_distance(self,n0,rho,rho_c,rho_at):
+        return 1/rho*self.lambdaZero*rho_c/numpy.pi
+        
+        
+    # attenuation alpha and distance over which the pulse suffers alpha attenuation due to MPA  
+    def calc_MPA_attenuation_and_distance(self,K,ionization_cross_section,rho_at):
+        lmpa = 1./(2*K*1.0545e-34*self.omegaZero*ionization_cross_section*numpy.power(self.calc_peak_intensity(),K-1)*rho_at)
+        return numpy.power((K+1.)/2.,1./(K-1)), lmpa

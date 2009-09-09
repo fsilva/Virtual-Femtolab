@@ -74,6 +74,8 @@ class VFFrame(wx.Frame):
         self.RemoveButton = wx.Button(self, wx.ID_REMOVE, "")
         self.findwaist_id = wx.NewId()
         self.FindWaistButton = wx.Button(self, self.findwaist_id, "Find Next Waist")
+        self.otherestimatives_id = wx.NewId()
+        self.OtherEstimativesButton = wx.Button(self, self.otherestimatives_id, "Other Estimatives")
         self.VFData = wx.grid.Grid(self)#, -1,  size=(255,400))
         self.SchematicPanel = wx.Panel(self, -1)
         self.DistanceSlider = wx.Slider(self, -1, 0, 0, 1000)
@@ -102,6 +104,7 @@ class VFFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.editbutton_click, self.EditButton)
         self.Bind(wx.EVT_BUTTON, self.removebutton_click, self.RemoveButton)
         self.Bind(wx.EVT_BUTTON, self.findwaist_click, self.FindWaistButton)
+        self.Bind(wx.EVT_BUTTON, self.otherestimatives_click, self.OtherEstimativesButton)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.distanceslider_change, self.DistanceSlider)
         self.Bind(wx.EVT_TEXT_ENTER, self.edit_distance_change)
         #self.SchematicPanel.Bind(wx.EVT_PAINT, self.repaint_schematic) 
@@ -153,6 +156,7 @@ class VFFrame(wx.Frame):
         self.sizer_8.Add(self.EditButton, 0, wx.ALL|wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 5)
         self.sizer_8.Add(self.RemoveButton, 0, wx.ALL|wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 5)
         self.sizer_8.Add(self.FindWaistButton, 0, wx.ALL|wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 5)
+        self.sizer_8.Add(self.OtherEstimativesButton,0,wx.ALL|wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 5)
         self.sizer_7.Add(self.sizer_8,0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
         self.sizer_6.Add(self.sizer_7, 3, wx.EXPAND, 0)
         self.sizer_6.Add(self.VFData,0,wx.EXPAND,0)
@@ -356,8 +360,13 @@ class VFFrame(wx.Frame):
             self.change_distance(z)
             self.DistanceSlider.SetValue(z*1000/self.propagator.get_max_z())
             
-            
-            
+    def otherestimatives_click(self, event):            
+        event.Skip()
+        # Open add dialog
+        import estimatives_dialog
+        self.estimatives_dialog = estimatives_dialog.EstimativesDialog(self)
+        self.estimatives_dialog.set_pulseBeam(self.propagator.get_pulseBeam()) 
+        self.estimatives_dialog.Show()    
             
         
 ################################ other events ################################
