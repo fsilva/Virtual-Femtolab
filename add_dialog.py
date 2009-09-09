@@ -16,7 +16,7 @@ class AddDialog(wx.Dialog):
         kwds["style"] = wx.DEFAULT_DIALOG_STYLE
         wx.Dialog.__init__(self, *args, **kwds)
         self.element = wx.StaticText(self, -1, "Element Type:", style=wx.ALIGN_CENTRE)
-        self.list_box_1 = wx.ListBox(self, -1, choices=["Material Propagation", "Thin Lens"], style=wx.LB_SINGLE)
+        self.list_box_1 = wx.ListBox(self, -1, choices=["Material Propagation", "Thin Lens","Fake Aperture"], style=wx.LB_SINGLE)
         self.button_1 = wx.Button(self, wx.ID_ADD, "")
 
         self.__set_properties()
@@ -61,6 +61,8 @@ class AddDialog(wx.Dialog):
             self.add_function('Material Propagation',self.position)
         elif(x == 1):
             self.add_function('Thin Lens',self.position)
+        elif(x == 2):
+            self.add_function('Fake Aperture',self.position)
         else:
             #do nothing
             pass 

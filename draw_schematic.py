@@ -82,6 +82,8 @@ def draw_element(dc,x,width,height,element,type,selected,beam_size_in,beam_size_
         draw_propagation(dc,x,width,height,element,selected,beam_size_in,beam_size_out)
     elif(type == 'element_thinlens.Element_ThinLens'):
         draw_thinlens(dc,x,width,height,element,selected,beam_size_in,beam_size_out)
+    elif(type == 'element_aperture.Element_Aperture'):
+        draw_aperture(dc,x,width,height,element,selected,beam_size_in,beam_size_out)
     
     
 def draw_propagation(dc,x,width,height,element,selected,beam_size_in,beam_size_out):
@@ -126,5 +128,28 @@ def draw_thinlens(dc,x,width,height,element,selected,beam_size_in,beam_size_out)
 
     #draw text
     helper_draw_text(dc,x,width,height,element.name,'f= %1.1e m'%element.f)
+    
+def draw_aperture(dc,x,width,height,element,selected,beam_size_in,beam_size_out):
+
+    helper_draw_box(dc,x,width,height,selected)
+
+    #draw beam propagation
+    helper_draw_beam(dc,x,width*0.5,height,beam_size_in,beam_size_in)
+    helper_draw_beam(dc,x+width*0.5,width*0.5,height,beam_size_out,beam_size_out)
+
+    #draw thin lens
+    x0 = x+width*0.5
+    y0 = height*0.3
+    y1 = height*(0.5-beam_size_out/4)
+    y2 = height*(0.5+beam_size_out/4)
+    y3 = height*0.7
+    l = 5
+    
+    lines = [(x0,y0,x0,y1),(x0,y2,x0,y3)]
+    dc.SetPen(wx.Pen('black', 2))     
+    dc.DrawLineList(lines)
+
+    #draw text
+    helper_draw_text(dc,x,width,height,element.name,'new spot=\n %1.1e m'%element.new_spot)
 
 

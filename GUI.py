@@ -322,6 +322,11 @@ class VFFrame(wx.Frame):
             dialog = edit_thinlens.EditThinLens(self)
             dialog.set_info(self.propagator.get_elements()[self.selected-1],self.refresh_everything)
             dialog.Show()
+        elif(name == 'element_aperture.Element_Aperture'):
+            import edit_aperture
+            dialog = edit_aperture.EditAperture(self)
+            dialog.set_info(self.propagator.get_elements()[self.selected-1],self.refresh_everything)
+            dialog.Show()
             
         event.Skip()
 

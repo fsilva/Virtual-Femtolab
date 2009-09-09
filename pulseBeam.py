@@ -358,7 +358,22 @@ class pulseBeam:
             if(lambda1 < wavelength and wavelength < lambda2):
                 self.Spectrum[i] *= mult_factor
                 self.Spectrum[i] *= mult_factor  #TODO fix this function
+    
+    # A fake aperture in this context is an optical element which sets the gaussian spot size to the aperture radius,
+    #   and scales the energy/power by a factor of new_spot**2/old_spot**2 (if newspot < oldspot)  
+    def beam_apply_fake_aperture(self,new_spot):
+        old_spot = self.BeamProfile_spot
+        
+        if(new_spot > old_spot):
+            return
+        
+        if(self.energy > 0):
+            self.energy *= new_spot**2/old_spot**2
+        else:
+            self.peak_power *= new_spot**2/old_spot**2
             
+        self.BeamProfile_spot = new_spot
+        
             
     def beam_apply_propagation(self,length,n):
         w, R = self.beam_calc_propagation(length,n)

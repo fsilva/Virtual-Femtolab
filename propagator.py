@@ -7,6 +7,7 @@ import pulseBeam
 
 import element_propagation
 import element_thinlens
+import element_aperture
 #import element_chirpedmirror
 #import element_filter
 
@@ -63,7 +64,7 @@ class Propagator:
         #self.elements.append(element_thinlens.Element_ThinLens(1,800e-9))
         #self.elements.append(element_propagation.Element_Propagation(0.001,element_propagation.materials[0],800e-9))
         #self.elements.append(element_propagation.Element_Propagation(0.002,element_propagation.materials[1],800e-9))
-        #self.elements.append(element_propagation.Element_Propagation(0.001,element_propagation.materials[1],800e-9))
+        self.elements.append(element_aperture.Element_Aperture(0.001))
         #self.elements.append(element_propagation.Element_Propagation(0.002,element_propagation.materials[1],800e-9))
         #self.elements.append(element_propagation.Element_Propagation(0.005,element_propagation.materials[0],800e-9))
         #self.elements.append(element_chirpedmirror.Element_ChirpedMirror(element_chirpedmirror.mirrors[0],10,800e-9))
@@ -138,7 +139,11 @@ class Propagator:
                     
             elif(element_name == 'element_thinlens.Element_ThinLens'):
                 
-                new_spot,new_curvature = self.initialPulseBeam.beam_calc_thinlens(element.f,spot,curvature)                
+                new_spot,new_curvature = self.initialPulseBeam.beam_calc_thinlens(element.f,spot,curvature)      
+            elif(element_name == 'element_aperture.Element_Aperture'):
+                if(spot > element.new_spot):
+                    new_spot = element.new_spot
+                new_curvature = curvature
             else:
                 pass
             if(new_curvature > 0 and curvature < 0):
@@ -163,6 +168,8 @@ class Propagator:
             element = element_chirpedmirror.Element_ChirpedMirror(element_chirpedmirror.mirrors[0],22,800e-9)
         elif(element_type == 'Bandstop Spectral Filter'):
             element = element_filter.Element_Filter(780e-9,820e-9)
+        elif(element_type == 'Fake Aperture'):
+            element = element_aperture.Element_Aperture(1)
         else:
             return
             
