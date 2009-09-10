@@ -11,33 +11,33 @@ import wx.grid
 
 
 class EstimativesDialog(wx.Frame):
-    def __init__(self, *args, **kwds):
+    def __init__(self, cleanup_function=None, *args, **kwds):
         # begin wxGlade: MyFrame.__init__
         kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
         self.sizer_4_staticbox = wx.StaticBox(self, -1, "Plasma Formation Parameters")
         self.sizer_3_staticbox = wx.StaticBox(self, -1, "Material Parameters")
         self.label_1 = wx.StaticText(self, -1, "n", style=wx.ALIGN_CENTRE)
-        self.text_n = wx.TextCtrl(self, -1, "", style=wx.TE_PROCESS_ENTER|wx.TE_RIGHT)
+        self.text_n = wx.TextCtrl(self, -1, "1", style=wx.TE_PROCESS_ENTER|wx.TE_RIGHT)
         self.label_2 = wx.StaticText(self, -1, "GVD", style=wx.ALIGN_CENTRE)
-        self.text_gvd = wx.TextCtrl(self, -1, "")
+        self.text_gvd = wx.TextCtrl(self, -1, "20")
         self.label_9 = wx.StaticText(self, -1, "fs**2/m")
         self.label_3 = wx.StaticText(self, -1, "n2", style=wx.ALIGN_CENTRE)
-        self.text_n2 = wx.TextCtrl(self, -1, "")
+        self.text_n2 = wx.TextCtrl(self, -1, "1")
         self.label_10 = wx.StaticText(self, -1, "m**2/W")
         self.label_4 = wx.StaticText(self, -1, "K", style=wx.ALIGN_CENTRE)
-        self.text_k = wx.TextCtrl(self, -1, "")
+        self.text_k = wx.TextCtrl(self, -1, "8")
         self.label_5 = wx.StaticText(self, -1, "rho", style=wx.ALIGN_CENTRE)
-        self.text_rho = wx.TextCtrl(self, -1, "")
+        self.text_rho = wx.TextCtrl(self, -1, "1")
         self.label_11 = wx.StaticText(self, -1, "m**-3", style=wx.ALIGN_CENTRE)
         self.label_6 = wx.StaticText(self, -1, "rho critical", style=wx.ALIGN_CENTRE)
-        self.text_rho_c = wx.TextCtrl(self, -1, "")
+        self.text_rho_c = wx.TextCtrl(self, -1, "1")
         self.label_11_copy = wx.StaticText(self, -1, "m**-3", style=wx.ALIGN_CENTRE)
         self.label_7 = wx.StaticText(self, -1, "rho atomic", style=wx.ALIGN_CENTRE)
-        self.text_rho_at = wx.TextCtrl(self, -1, "")
+        self.text_rho_at = wx.TextCtrl(self, -1, "1")
         self.label_11_copy_1 = wx.StaticText(self, -1, "m**-3", style=wx.ALIGN_CENTRE)
         self.label_8 = wx.StaticText(self, -1, "sigmaK", style=wx.ALIGN_CENTRE)
-        self.text_sigmaK = wx.TextCtrl(self, -1, "")
+        self.text_sigmaK = wx.TextCtrl(self, -1, "1")
         self.label_12 = wx.StaticText(self, -1, "m**2K/W**K/s**-1(TODO)")
         self.grid_1 = wx.grid.Grid(self, -1, size=(1, 1))
 
@@ -52,20 +52,34 @@ class EstimativesDialog(wx.Frame):
         self.Bind(wx.EVT_TEXT, self.text_changed, self.text_rho_c)
         self.Bind(wx.EVT_TEXT, self.text_changed, self.text_rho_at)
         self.Bind(wx.EVT_TEXT, self.text_changed, self.text_sigmaK)
-        # end wxGlade
+        
+        self.Bind(wx.EVT_CLOSE, self.on_close)
+        self.cleanup_function = cleanup_function
+        # end 
 
     def __set_properties(self):
         # begin wxGlade: MyFrame.__set_properties
-        self.SetTitle("frame_1")
-        self.grid_1.CreateGrid(8, 3)
+        self.SetTitle("Nonlinear Optics Propagation Estimatives")
+        self.grid_1.CreateGrid(9, 3)
         self.grid_1.SetRowLabelSize(0)
         self.grid_1.SetColLabelSize(0)
         self.grid_1.EnableEditing(0)
-        self.grid_1.EnableGridLines(0)
         self.grid_1.EnableDragColSize(0)
         self.grid_1.EnableDragRowSize(0)
         self.grid_1.EnableDragGridSize(0)
         self.grid_1.SetMinSize((250, 200))
+        
+        
+        self.grid_1.SetDefaultCellFont(wx.Font(12, wx.FONTFAMILY_SWISS, wx.NORMAL, wx.FONTWEIGHT_NORMAL))
+        self.grid_1.SetCellValue(0,0,'Defocusing distance')
+        self.grid_1.SetCellValue(1,0,'GVD distance')
+        self.grid_1.SetCellValue(2,0,'Self focusing distance')
+        self.grid_1.SetCellValue(3,0,'Beam Collapse distance')
+        self.grid_1.SetCellValue(4,0,'Plasma defocusing distance')
+        self.grid_1.SetCellValue(5,0,'MPA absorption distance')
+        self.grid_1.SetCellValue(6,0,'MPA absorption coefficient')
+        self.grid_1.SetCellValue(7,0,'Critical Power')
+        self.grid_1.SetCellValue(8,0,'SPM estimative')
         # end wxGlade
 
     def __do_layout(self):
@@ -125,14 +139,60 @@ class EstimativesDialog(wx.Frame):
     
     def set_pulseBeam(self,pulseBeam):
         self.pulseBeam = pulseBeam
-    
+
         
     def update_estimatives(self):
-        pass
+        self.read_parameters()
+        
+        self.update_grid_value_meters(0, self.pulseBeam.calc_diffraction_distance(self.n))
+        self.update_grid_value_meters(1, self.pulseBeam.calc_gvd_distance(self.gvd))
+        self.update_grid_value_meters(2, self.pulseBeam.calc_selffocusing_distance(self.n,self.n2))
+        self.update_grid_value_meters(3, self.pulseBeam.calc_collapse_distance(self.n,self.n2))
+        self.update_grid_value_meters(4, self.pulseBeam.calc_plasmadefocusing_distance(self.n,self.rho,self.rho_c,self.rho_at))
+        att,dist = self.pulseBeam.calc_MPA_attenuation_and_distance(self.K,self.sigmaK,self.rho_at)
+        self.grid_1.SetCellValue(5,1,'%3.5e'%(att))
+        self.update_grid_value_meters(6, dist)
+        self.grid_1.SetCellValue(7,1,'%3.5e'%(self.pulseBeam.calc_critical_power(self.n,self.n2)))
+        self.grid_1.SetCellValue(7,2,'W')
+        
+        self.grid_1.AutoSize()
+        
+        
+    def update_grid_value_meters(self, line, distance):
+        if(distance >= 1):
+            self.grid_1.SetCellValue(line,1,'%4.5f'%(distance))
+            self.grid_1.SetCellValue(line,2,'m')
+        elif(distance >= 0.001):
+            self.grid_1.SetCellValue(line,1,'%3.5f'%(distance*1000))
+            self.grid_1.SetCellValue(line,2,'mm')
+        else:
+            self.grid_1.SetCellValue(line,1,'%3.5e'%(distance*1e6))
+            self.grid_1.SetCellValue(line,2,'um')
+        
+        
+    
+    def read_parameters(self):
+        # Problem: eval is a possible security hole. An user could just type malicious code in the text boxes. But then again, who would do that? why not open the python interpreter?
+        try: 
+            self.n = eval(self.text_n.GetValue())
+            self.gvd = eval(self.text_gvd.GetValue())
+            self.n2 = eval(self.text_n2.GetValue())
+            self.K = eval(self.text_k.GetValue())
+            self.rho = eval(self.text_rho.GetValue())
+            self.rho_c = eval(self.text_rho_c.GetValue())
+            self.rho_at = eval(self.text_rho_at.GetValue())
+            self.sigmaK = eval(self.text_sigmaK.GetValue())
+        except SyntaxError as exception:
+            print 'Erro when converting text to real number: ', exception.args[1][3]
 
-    def text_changed(self, event): # wxGlade: MyFrame.<event_handler>
-        print "Event handler `text_changed' not implemented!"
+    def text_changed(self, event): # wxGlade: .<event_handler>
+        self.update_estimatives()
         event.Skip()
+        
+    def on_close(self, event):
+        self.cleanup_function()
+        self.Destroy()
+        del self
 
 # end of class MyFrame
 

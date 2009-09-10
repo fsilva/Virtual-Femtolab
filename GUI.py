@@ -364,12 +364,16 @@ class VFFrame(wx.Frame):
         event.Skip()
         # Open add dialog
         import estimatives_dialog
-        self.estimatives_dialog = estimatives_dialog.EstimativesDialog(self)
+        self.estimatives_dialog = estimatives_dialog.EstimativesDialog(self.otherestimatives_cleanup,self)
         self.estimatives_dialog.set_pulseBeam(self.propagator.get_pulseBeam()) 
         self.estimatives_dialog.Show()    
+        self.estimatives_dialog.update_estimatives()
             
         
 ################################ other events ################################
+
+    def otherestimatives_cleanup(self):
+        self.estimatives_dialog = None
 
     def distanceslider_change(self, event): # wxGlade: VFFrame.<event_handler>
         distance = self.DistanceSlider.GetValue()/1000.*self.propagator.get_max_z()
@@ -424,6 +428,11 @@ class VFFrame(wx.Frame):
         self.refresh_interface()
         self.refresh_grid_information()
         self.SchematicPanel.Refresh() #trigger paint event
+        
+        #if estimatives window is open, update it
+        if(not self.estimatives_dialog is None):
+            self.estimatives_dialog.set_pulseBeam(self.propagator.get_pulseBeam())
+            self.estimatives_dialog.update_estimatives()
         
         
        
